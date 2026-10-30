@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Shield, Mail, Lock, User, Phone, AlertCircle, ArrowRight } from 'lucide-react';
+import { Shield, Mail, Lock, User, Phone, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function AuthPage({ mode = 'login' }) {
@@ -20,18 +20,43 @@ export default function AuthPage({ mode = 'login' }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return; // Prevent duplicate submission
+
     setError(null);
+
+    // Client-side quick input validation
+    if (!isLogin && !formData.name.trim()) {
+      setError('Please enter your full name');
+      return;
+    }
+
+    if (!formData.email.trim() || !formData.email.includes('@')) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (!formData.password || formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (isLogin) {
-        await login(formData.email, formData.password);
+        await login(formData.email.trim(), formData.password);
       } else {
-        await register(formData);
+        await register({
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          password: formData.password,
+          phone: formData.phone.trim(),
+          emergency_notes: formData.emergency_notes.trim()
+        });
       }
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || 'Authentication failed');
+      setError(err.message || 'Authentication failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -56,7 +81,7 @@ export default function AuthPage({ mode = 'login' }) {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
         <div className="bg-white py-8 px-6 shadow-md rounded-2xl border border-slate-200/80 sm:px-10">
           {error && (
-            <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 flex items-center gap-2">
+            <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 flex items-center gap-2 animate-in fade-in">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{error}</span>
             </div>
@@ -75,10 +100,11 @@ export default function AuthPage({ mode = 'login' }) {
                   <input
                     type="text"
                     required
+                    disabled={loading}
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Jane Doe"
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A90E2] focus:bg-white"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A90E2] focus:bg-white disabled:opacity-60"
                   />
                 </div>
               </div>
@@ -95,10 +121,11 @@ export default function AuthPage({ mode = 'login' }) {
                 <input
                   type="email"
                   required
+                  disabled={loading}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="name@example.com"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A90E2] focus:bg-white"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A90E2] focus:bg-white disabled:opacity-60"
                 />
               </div>
             </div>
@@ -114,10 +141,11 @@ export default function AuthPage({ mode = 'login' }) {
                 <input
                   type="password"
                   required
+                  disabled={loading}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A90E2] focus:bg-white"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A90E2] focus:bg-white disabled:opacity-60"
                 />
               </div>
             </div>
@@ -134,10 +162,11 @@ export default function AuthPage({ mode = 'login' }) {
                     </div>
                     <input
                       type="tel"
+                      disabled={loading}
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+1 (555) 0123"
-                      className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A90E2] focus:bg-white"
+                      className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A90E2] focus:bg-white disabled:opacity-60"
                     />
                   </div>
                 </div>
@@ -148,10 +177,11 @@ export default function AuthPage({ mode = 'login' }) {
                   </label>
                   <input
                     type="text"
+                    disabled={loading}
                     value={formData.emergency_notes}
                     onChange={(e) => setFormData({ ...formData, emergency_notes: e.target.value })}
                     placeholder="Asthma inhaler in bag, Type O+ blood..."
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A90E2] focus:bg-white"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A90E2] focus:bg-white disabled:opacity-60"
                   />
                 </div>
               </>
@@ -160,10 +190,19 @@ export default function AuthPage({ mode = 'login' }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3 px-4 rounded-xl bg-[#101C2C] text-white font-bold text-sm hover:bg-slate-800 transition shadow-md flex items-center justify-center gap-2"
+              className="w-full mt-2 py-3 px-4 rounded-xl bg-[#101C2C] text-white font-bold text-sm hover:bg-slate-800 transition shadow-md flex items-center justify-center gap-2 disabled:opacity-75 cursor-pointer"
             >
-              {loading ? 'Please wait...' : isLogin ? 'Sign In to ESTELA' : 'Create Safety Account'}
-              <ArrowRight className="w-4 h-4" />
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  <span>{isLogin ? 'Sign In to ESTELA' : 'Create Safety Account'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
 
