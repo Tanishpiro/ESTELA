@@ -1,0 +1,256 @@
+import React, { useState } from 'react';
+import { AlertTriangle, X, ShieldAlert, CheckCircle2, Phone, BellRing, MessageSquare, Send } from 'lucide-react';
+import { useSafety } from '../context/SafetyContext';
+import { useAuth } from '../context/AuthContext';
+
+export default function SosButton({ size = 'large' }) {
+  const { triggerSOS, activeIncident, resolveIncident, contacts, latestLocation } = useSafety();
+  const { user } = useAuth();
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+  const [isTriggering, setIsTriggering] = useState(false);
+  const [sosResult, setSosResult] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
+
+  React.useEffect(() => {
+    let timer;
+    if (showConfirmModal && countdown > 0) {
+      timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    } else if (showConfirmModal && countdown === 0 && !isTriggering && !sosResult) {
+      executeSos();
+    }
+    return () => clearTimeout(timer);
+  }, [showConfirmModal, countdown]);
+
+  const handleOpenSos = () => {
+    setErrorMsg(null);
+    setSosResult(null);
+    setCountdown(3);
+    setShowConfirmModal(true);
+  };
+
+  const executeSos = async () => {
+    try {
+      setIsTriggering(true);
+      const res = await triggerSOS();
+      setSosResult(res);
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to dispatch SOS alert');
+    } finally {
+      setIsTriggering(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setShowConfirmModal(false);
+    setCountdown(3);
+    setIsTriggering(false);
+  };
+
+  const handleManualResolve = async () => {
+    if (activeIncident) {
+      await resolveIncident(activeIncident.id, 'User confirmed false alarm / safe state');
+    }
+    setShowConfirmModal(false);
+    setSosResult(null);
+  };
+
+  // Helper to open real phone SMS app pre-filled with location link & primary phone number
+  const handleOpenNativeSms = () => {
+    const primary = contacts.find(c => c.role === 'primary') || contacts[0];
+    const phone = primary?.phone || '';
+    const lat = latestLocation?.latitude || 28.4788;
+    const lon = latestLocation?.longitude || 76.9128;
+    const mapUrl = `https://maps.google.com/?q=${lat},${lon}`;
+    const smsBody = encodeURIComponent(
+      `🚨 EMERGENCY SOS from ESTELA: ${user?.name || 'I'} need immediate help! Live Location: ${mapUrl}`
+    );
+    // Universal SMS URI works across iOS, Android, and Windows/Mac default SMS handlers
+    window.location.href = `sms:${phone}?body=${smsBody}`;
+  };
+
+  return (
+    <>
+      {size === 'compact' && (
+        <button
+          onClick={handleOpenSos}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs transition border border-red-200/80"
+        >
+          <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+          SOS
+        </button>
+      )}
+
+      {size === 'bar' && (
+        <button
+          onClick={handleOpenSos}
+          className="w-full py-3.5 px-4 rounded-2xl bg-red-50 hover:bg-red-100 border border-red-200/80 text-left flex items-center justify-between transition group shadow-xs"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center font-black text-xs">
+              SOS
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-800">Emergency SOS</p>
+              <p className="text-[11px] text-slate-400">Tap to instantly alert contacts</p>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-red-600 group-hover:translate-x-0.5 transition">
+            Trigger Alert →
+          </span>
+        </button>
+      )}
+
+      {size === 'large' && (
+        <div className="flex flex-col items-center">
+          <button
+            onClick={handleOpenSos}
+            aria-label="Emergency SOS Button"
+            className="w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-red-500 hover:bg-red-600 text-white font-black text-3xl sm:text-4xl shadow-xl flex flex-col items-center justify-center transition-transform active:scale-95 border-4 border-white sos-pulse-ring cursor-pointer"
+          >
+            <span>SOS</span>
+            <span className="text-[11px] font-semibold tracking-normal uppercase opacity-90 mt-1">
+              Emergency
+            </span>
+          </button>
+          <p className="text-xs text-slate-400 font-medium mt-3 text-center">
+            Tap for instant emergency dispatch with live GPS
+          </p>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-red-100 overflow-hidden relative">
+            
+            {!sosResult && !errorMsg && (
+              <div className="text-center py-2">
+                <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                  <ShieldAlert className="w-9 h-9" />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900">
+                  Trigger Emergency SOS?
+                </h3>
+                <p className="text-slate-500 text-xs sm:text-sm mt-2 max-w-xs mx-auto">
+                  ESTELA will immediately broadcast your GPS location and emergency notification to your trusted contacts.
+                </p>
+
+                <div className="my-6">
+                  <div className="inline-flex items-center justify-center w-18 h-18 rounded-full border-4 border-red-500 text-3xl font-black text-red-500 bg-red-50">
+                    {countdown}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-2">
+                    Dispatching automatically in {countdown}s
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <button
+                    onClick={handleCancel}
+                    className="w-full py-3 px-4 rounded-xl border border-slate-200 font-bold text-xs sm:text-sm text-slate-700 hover:bg-slate-50 transition"
+                  >
+                    Cancel Alert
+                  </button>
+                  <button
+                    onClick={executeSos}
+                    disabled={isTriggering}
+                    className="w-full py-3 px-4 rounded-xl bg-red-500 text-white font-bold text-xs sm:text-sm hover:bg-red-600 transition shadow-sm"
+                  >
+                    {isTriggering ? 'Sending...' : 'Send NOW'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {errorMsg && (
+              <div className="text-center py-4">
+                <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <AlertTriangle className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">SOS Dispatch Failed</h3>
+                <p className="text-xs text-red-600 mt-1">{errorMsg}</p>
+                <div className="mt-5 flex gap-3">
+                  <button
+                    onClick={handleCancel}
+                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={executeSos}
+                    className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-xs font-bold"
+                  >
+                    Retry SOS
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {sosResult && (
+              <div className="py-2">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+                    <span className="font-bold text-red-600 uppercase tracking-wider text-xs">
+                      Alert Dispatched
+                    </span>
+                  </div>
+                  <button onClick={() => setShowConfirmModal(false)} className="text-slate-400 hover:text-slate-600">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 mb-4">
+                  <h4 className="font-bold text-emerald-900 text-sm flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    SMS & Emergency Alerts Dispatched
+                  </h4>
+                  <p className="text-xs text-emerald-700 mt-1">
+                    An SMS text message with your live Google Maps location has been automatically dispatched to your primary contact!
+                  </p>
+                </div>
+
+                {/* Direct Real Phone SMS Action Button */}
+                <div className="mb-4">
+                  <button
+                    onClick={handleOpenNativeSms}
+                    className="w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Open Native Messages App (Direct SMS)
+                  </button>
+                  <p className="text-[11px] text-slate-400 text-center mt-1.5">
+                    Pre-fills your primary contact's number & Google Maps coordinates in SMS
+                  </p>
+                </div>
+
+                <div className="space-y-2 mb-4 max-h-40 overflow-y-auto">
+                  {sosResult.notifiedContacts?.map((contact) => (
+                    <div key={contact.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-slate-800">{contact.name}</p>
+                        <p className="text-slate-400 text-[11px]">{contact.phone}</p>
+                      </div>
+                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded text-[10px]">
+                        Delivered
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleManualResolve}
+                  className="w-full py-3 rounded-xl bg-[#0D3833] text-white font-bold text-xs sm:text-sm hover:bg-[#164E46] transition shadow-sm"
+                >
+                  I Am Now Safe (Resolve Alert)
+                </button>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-primary: #0D3833;
+    --color-primary-light: #164E46;
+    --color-accent: #115E59;
+    --color-bg-light: #F4F7F6;
+    --color-card: #FFFFFF;
+    --color-text: #1E293B;
+    --color-text-muted: #64748B;
+  }
+
+  body {
+    background-color: #F3F6F5;
+    color: #1E293B;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+  }
+}
+
+/* Subtle glowing pulse for SOS */
+@keyframes warm-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 16px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.sos-pulse-ring {
+  animation: warm-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+/* Circular Check-in Dial Progress */
+.circle-progress-ring {
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* Leaf & organic warm gradients */
+.bg-warm-hero {
+  background: linear-gradient(135deg, #FBFBF9 0%, #F5F2EB 50%, #EAEFE9 100%);
+}
+
+.bg-emerald-gradient {
+  background: linear-gradient(135deg, #0f3d38 0%, #164E46 100%);
+}
