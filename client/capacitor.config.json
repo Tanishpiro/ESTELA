@@ -1,0 +1,6 @@
+{
+  "appId": "com.tanish.estela",
+  "appName": "ESTELA",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
