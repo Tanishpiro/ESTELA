@@ -1,6 +1,7 @@
 // Telegram Emergency Alert Dispatch Service with Real-time Guardian Responsibility Handling
 const TELEGRAM_BOT_TOKEN = '9016665127:AAE1kRi0zpATonPJ91j26Ub5_pP3WGX75oA';
 const DEFAULT_CHAT_ID = '8971040800';
+export const DEFAULT_EMERGENCY_MOBILE = '+91 8307543010';
 
 export async function sendTelegramEmergencyAlert({
   userName = 'ESTELA User',
@@ -26,7 +27,7 @@ export async function sendTelegramEmergencyAlert({
 `🚨 *ESTELA EMERGENCY SOS ALERT!* 🚨
 ━━━━━━━━━━━━━━━━━━━━
 👤 *User:* ${userName}
-📱 *Phone:* ${phone || 'Not provided'}
+📱 *Target Phone:* ${DEFAULT_EMERGENCY_MOBILE}
 📍 *Live Location:* [View on Google Maps](${mapUrl})
 🌐 *Coordinates:* \`${lat.toFixed(5)}, ${lon.toFixed(5)}\`
 🎯 *GPS Accuracy:* ±${Math.round(accuracy || 10)}m

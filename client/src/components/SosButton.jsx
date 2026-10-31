@@ -109,7 +109,8 @@ export default function SosButton({ size = 'large' }) {
   // Helper to open real phone SMS app pre-filled with location link & primary phone number
   const handleOpenNativeSms = () => {
     const primary = contacts.find(c => c.role === 'primary') || contacts[0];
-    const phone = primary?.phone || '';
+    const phone = primary?.phone || '+91 8307543010';
+    const cleanPhone = phone.replace(/\s+/g, '');
     const lat = latestLocation?.latitude || 28.4788;
     const lon = latestLocation?.longitude || 76.9128;
     const mapUrl = `https://maps.google.com/?q=${lat},${lon}`;
@@ -117,7 +118,7 @@ export default function SosButton({ size = 'large' }) {
       `🚨 EMERGENCY SOS from ESTELA: ${user?.name || 'I'} need immediate help! Live Location: ${mapUrl}`
     );
     // Universal SMS URI works across iOS, Android, and Windows/Mac default SMS handlers
-    window.location.href = `sms:${phone}?body=${smsBody}`;
+    window.location.href = `sms:${cleanPhone}?body=${smsBody}`;
   };
 
   return (
