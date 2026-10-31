@@ -13,6 +13,7 @@ import ContactsPage from './pages/ContactsPage';
 import SafetyHistoryPage from './pages/SafetyHistoryPage';
 import SettingsPage from './pages/SettingsPage';
 import ChildMonitorPage from './pages/ChildMonitorPage';
+import ChildAppPage from './pages/ChildAppPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -60,6 +61,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <ChildMonitorPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/catty"
+                element={
+                  <ProtectedRoute>
+                    <ChildAppPage />
                   </ProtectedRoute>
                 }
               />

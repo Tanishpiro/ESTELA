@@ -16,9 +16,9 @@ export default function Layout({ children }) {
 
   const navLinks = [
     { label: 'Home', path: '/dashboard' },
-    { label: 'Child (Catty)', path: '/child' },
+    { label: 'Parent Portal (Tanish)', path: '/child' },
+    { label: "Catty's App", path: '/catty' },
     { label: 'Safe Map', path: '/map' },
-    { label: 'History', path: '/history' },
     { label: 'Contacts', path: '/contacts' },
   ];
 
