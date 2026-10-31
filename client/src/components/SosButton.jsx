@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { AlertTriangle, X, ShieldAlert, CheckCircle2, Phone, BellRing, MessageSquare, Send, Check } from 'lucide-react';
+import { AlertTriangle, X, ShieldAlert, CheckCircle2, Phone, BellRing, MessageSquare, Send, Check, ShieldCheck, Clock } from 'lucide-react';
 import { useSafety } from '../context/SafetyContext';
 import { useAuth } from '../context/AuthContext';
-import { sendTelegramEmergencyAlert } from '../services/telegramService';
+import { sendTelegramEmergencyAlert, getGuardianAcknowledgmentStatus } from '../services/telegramService';
 
 export default function SosButton({ size = 'large' }) {
   const { triggerSOS, activeIncident, resolveIncident, contacts, latestLocation } = useSafety();
@@ -57,6 +57,23 @@ export default function SosButton({ size = 'large' }) {
   };
 
   const [telegramStatus, setTelegramStatus] = useState(null);
+  const [guardianAck, setGuardianAck] = useState(null);
+
+  // Poll for parent acknowledgment when alert is active
+  React.useEffect(() => {
+    let pollInterval;
+    if (sosResult && !guardianAck) {
+      const checkAck = async () => {
+        const ack = await getGuardianAcknowledgmentStatus();
+        if (ack) {
+          setGuardianAck(ack);
+        }
+      };
+      checkAck();
+      pollInterval = setInterval(checkAck, 4000);
+    }
+    return () => clearInterval(pollInterval);
+  }, [sosResult, guardianAck]);
 
   const handleSendTelegram = async () => {
     try {
@@ -253,6 +270,49 @@ export default function SosButton({ size = 'large' }) {
                   <p className="text-xs text-emerald-700 mt-1">
                     Emergency notification with live GPS coordinates has been transmitted to your Telegram guardian bot (@Esteella_bot).
                   </p>
+                </div>
+
+                {/* Parent / Guardian Responsibility Confirmation Tag */}
+                <div className="p-3.5 rounded-2xl border mb-4 transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                        guardianAck?.accepted 
+                          ? 'bg-emerald-100 text-emerald-700' 
+                          : guardianAck 
+                          ? 'bg-amber-100 text-amber-700' 
+                          : 'bg-blue-50 text-blue-600 animate-pulse'
+                      }`}>
+                        {guardianAck?.accepted ? (
+                          <ShieldCheck className="w-4 h-4" />
+                        ) : (
+                          <Clock className="w-4 h-4" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">
+                          Parent Responsibility Status
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                          {guardianAck?.accepted 
+                            ? `Accepted by ${guardianAck.from?.first_name || 'Parent'} via Telegram`
+                            : guardianAck
+                            ? `Unable to respond (${guardianAck.from?.first_name || 'Parent'})`
+                            : 'Waiting for parent confirmation on Telegram...'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      guardianAck?.accepted
+                        ? 'bg-emerald-500 text-white shadow-xs'
+                        : guardianAck
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {guardianAck?.accepted ? 'Responsibility Taken ✓' : guardianAck ? 'Declined' : 'Pending Response'}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Direct Telegram & Mobile Action Buttons */}

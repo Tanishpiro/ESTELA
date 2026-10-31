@@ -1,4 +1,4 @@
-// Telegram Emergency Alert Dispatch Service
+// Telegram Emergency Alert Dispatch Service with Guardian Responsibility Acknowledgment
 const TELEGRAM_BOT_TOKEN = '9016665127:AAE1kRi0zpATonPJ91j26Ub5_pP3WGX75oA';
 const DEFAULT_CHAT_ID = '8971040800';
 
@@ -31,7 +31,8 @@ export async function sendTelegramEmergencyAlert({
 ⚡ *Trigger Source:* ${triggerSource}
 ⏰ *Time:* ${timeStr} (${dateStr})
 ${medicalInfo ? `🩺 *Medical Info:* ${medicalInfo}\n` : ''}━━━━━━━━━━━━━━━━━━━━
-⚠️ *Immediate assistance or guardian check-in requested!*`;
+🛡️ *GUARDIAN RESPONSIBILITY ACTION REQUIRED:*
+Please tap below to confirm whether you are taking immediate responsibility for this emergency alert.`;
 
   try {
     const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -42,7 +43,15 @@ ${medicalInfo ? `🩺 *Medical Info:* ${medicalInfo}\n` : ''}━━━━━━�
         chat_id: targetChatId,
         text: messageText,
         parse_mode: 'Markdown',
-        disable_web_page_preview: false
+        disable_web_page_preview: false,
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: '✅ I Accept Responsibility', callback_data: `ack_accept_${Date.now()}` },
+              { text: '❌ Unable To Respond', callback_data: `ack_decline_${Date.now()}` }
+            ]
+          ]
+        }
       })
     });
 
@@ -58,5 +67,33 @@ ${medicalInfo ? `🩺 *Medical Info:* ${medicalInfo}\n` : ''}━━━━━━�
       success: false,
       error: err.message
     };
+  }
+}
+
+// Function to poll or check guardian acknowledgment responses from Telegram
+export async function getGuardianAcknowledgmentStatus() {
+  try {
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=-10`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.ok || !Array.isArray(data.result)) return null;
+
+    // Look for recent callback queries (buttons clicked by parent)
+    const callbacks = data.result
+      .filter(u => u.callback_query)
+      .map(u => ({
+        id: u.callback_query.id,
+        from: u.callback_query.from,
+        data: u.callback_query.data,
+        accepted: u.callback_query.data?.startsWith('ack_accept'),
+        time: u.callback_query.message?.date ? new Date(u.callback_query.message.date * 1000) : new Date()
+      }));
+
+    if (callbacks.length > 0) {
+      return callbacks[callbacks.length - 1]; // latest acknowledgment
+    }
+    return null;
+  } catch {
+    return null;
   }
 }
