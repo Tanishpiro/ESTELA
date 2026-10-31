@@ -177,8 +177,26 @@ export default function ContactsPage() {
 
       {/* Modal for Add / Edit */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999
+          }}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 relative m-auto"
+            style={{ margin: 'auto' }}
+          >
             <h3 className="text-xl font-black text-slate-900 mb-1">
               {editingContact ? 'Edit Trusted Contact' : 'Add Trusted Contact'}
             </h3>

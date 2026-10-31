@@ -121,8 +121,26 @@ export default function SosButton({ size = 'large' }) {
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-red-100 overflow-hidden relative">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999
+          }}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-red-100 overflow-hidden relative m-auto"
+            style={{ margin: 'auto' }}
+          >
             
             {!sosResult && !errorMsg && (
               <div className="text-center py-2">
