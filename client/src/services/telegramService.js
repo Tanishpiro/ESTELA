@@ -1,4 +1,4 @@
-// Telegram Emergency Alert Dispatch Service with Guardian Responsibility Acknowledgment
+// Telegram Emergency Alert Dispatch Service with Real-time Guardian Responsibility Handling
 const TELEGRAM_BOT_TOKEN = '9016665127:AAE1kRi0zpATonPJ91j26Ub5_pP3WGX75oA';
 const DEFAULT_CHAT_ID = '8971040800';
 
@@ -32,7 +32,7 @@ export async function sendTelegramEmergencyAlert({
 ⏰ *Time:* ${timeStr} (${dateStr})
 ${medicalInfo ? `🩺 *Medical Info:* ${medicalInfo}\n` : ''}━━━━━━━━━━━━━━━━━━━━
 🛡️ *GUARDIAN RESPONSIBILITY ACTION REQUIRED:*
-Please tap below to confirm whether you are taking immediate responsibility for this emergency alert.`;
+Please tap an option below to confirm whether you are taking immediate responsibility for this emergency alert.`;
 
   try {
     const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -48,7 +48,7 @@ Please tap below to confirm whether you are taking immediate responsibility for 
           inline_keyboard: [
             [
               { text: '✅ I Accept Responsibility', callback_data: `ack_accept_${Date.now()}` },
-              { text: '❌ Unable To Respond', callback_data: `ack_decline_${Date.now()}` }
+              { text: '❌ Reject / Unable To Respond', callback_data: `ack_reject_${Date.now()}` }
             ]
           ]
         }
@@ -70,30 +70,67 @@ Please tap below to confirm whether you are taking immediate responsibility for 
   }
 }
 
-// Function to poll or check guardian acknowledgment responses from Telegram
-export async function getGuardianAcknowledgmentStatus() {
+// Check and process guardian acknowledgment updates from Telegram
+export async function processGuardianAcknowledgment(sinceUpdateId = 0) {
   try {
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=-10`;
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?limit=50`;
     const res = await fetch(url);
     const data = await res.json();
-    if (!data.ok || !Array.isArray(data.result)) return null;
+    if (!data.ok || !Array.isArray(data.result) || data.result.length === 0) return null;
 
-    // Look for recent callback queries (buttons clicked by parent)
-    const callbacks = data.result
-      .filter(u => u.callback_query)
-      .map(u => ({
-        id: u.callback_query.id,
-        from: u.callback_query.from,
-        data: u.callback_query.data,
-        accepted: u.callback_query.data?.startsWith('ack_accept'),
-        time: u.callback_query.message?.date ? new Date(u.callback_query.message.date * 1000) : new Date()
-      }));
+    // Filter all callback queries
+    const callbacks = data.result.filter(u => u.callback_query);
+    if (callbacks.length === 0) return null;
 
-    if (callbacks.length > 0) {
-      return callbacks[callbacks.length - 1]; // latest acknowledgment
+    // Get latest callback
+    const latest = callbacks[callbacks.length - 1].callback_query;
+    const isAccepted = latest.data && latest.data.includes('accept');
+    const isRejected = latest.data && (latest.data.includes('reject') || latest.data.includes('decline'));
+
+    // Acknowledge the callback immediately so Telegram stops loading spinner on parent's phone
+    try {
+      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          callback_query_id: latest.id,
+          text: isAccepted 
+            ? '✅ You accepted responsibility! ESTELA has been notified.' 
+            : '⚠️ You marked unable/rejected. Emergency backup will be notified.'
+        })
+      });
+
+      // Update Telegram message text to lock in the decision visually
+      if (latest.message) {
+        const timeNow = new Date().toLocaleTimeString();
+        const statusHeader = isAccepted 
+          ? `✅ *RESPONSIBILITY ACCEPTED*\nGuardian (${latest.from?.first_name || 'Parent'}) has accepted full responsibility at ${timeNow}.`
+          : `❌ *ALERT REJECTED / UNABLE TO RESPOND*\nGuardian (${latest.from?.first_name || 'Parent'}) was unable to respond at ${timeNow}.`;
+
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/editMessageText`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: latest.message.chat.id,
+            message_id: latest.message.message_id,
+            text: `${latest.message.text}\n\n━━━━━━━━━━━━━━━━━━━━\n${statusHeader}`,
+            parse_mode: 'Markdown'
+          })
+        });
+      }
+    } catch (e) {
+      // Ignore background notification errors
     }
-    return null;
-  } catch {
+
+    return {
+      id: latest.id,
+      from: latest.from,
+      accepted: isAccepted,
+      rejected: isRejected,
+      timestamp: new Date().toISOString()
+    };
+  } catch (err) {
+    console.error('Error processing guardian acknowledgment:', err);
     return null;
   }
 }

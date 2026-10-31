@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { AlertTriangle, X, ShieldAlert, CheckCircle2, Phone, BellRing, MessageSquare, Send, Check, ShieldCheck, Clock } from 'lucide-react';
+import { AlertTriangle, X, ShieldAlert, CheckCircle2, Phone, BellRing, MessageSquare, Send, Check, ShieldCheck, Clock, ShieldX } from 'lucide-react';
 import { useSafety } from '../context/SafetyContext';
 import { useAuth } from '../context/AuthContext';
-import { sendTelegramEmergencyAlert, getGuardianAcknowledgmentStatus } from '../services/telegramService';
+import { sendTelegramEmergencyAlert, processGuardianAcknowledgment } from '../services/telegramService';
 
 export default function SosButton({ size = 'large' }) {
   const { triggerSOS, activeIncident, resolveIncident, contacts, latestLocation } = useSafety();
@@ -62,18 +62,18 @@ export default function SosButton({ size = 'large' }) {
   // Poll for parent acknowledgment when alert is active
   React.useEffect(() => {
     let pollInterval;
-    if (sosResult && !guardianAck) {
+    if (sosResult) {
       const checkAck = async () => {
-        const ack = await getGuardianAcknowledgmentStatus();
+        const ack = await processGuardianAcknowledgment();
         if (ack) {
           setGuardianAck(ack);
         }
       };
       checkAck();
-      pollInterval = setInterval(checkAck, 4000);
+      pollInterval = setInterval(checkAck, 2500);
     }
     return () => clearInterval(pollInterval);
-  }, [sosResult, guardianAck]);
+  }, [sosResult]);
 
   const handleSendTelegram = async () => {
     try {
@@ -273,31 +273,39 @@ export default function SosButton({ size = 'large' }) {
                 </div>
 
                 {/* Parent / Guardian Responsibility Confirmation Tag */}
-                <div className="p-3.5 rounded-2xl border mb-4 transition-all duration-300">
+                <div className={`p-4 rounded-2xl border mb-4 transition-all duration-300 ${
+                  guardianAck?.accepted
+                    ? 'bg-emerald-50 border-emerald-200'
+                    : guardianAck?.rejected
+                    ? 'bg-rose-50 border-rose-200'
+                    : 'bg-slate-50 border-slate-200'
+                }`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
                         guardianAck?.accepted 
                           ? 'bg-emerald-100 text-emerald-700' 
-                          : guardianAck 
-                          ? 'bg-amber-100 text-amber-700' 
-                          : 'bg-blue-50 text-blue-600 animate-pulse'
+                          : guardianAck?.rejected 
+                          ? 'bg-rose-100 text-rose-700' 
+                          : 'bg-blue-100 text-blue-600 animate-pulse'
                       }`}>
                         {guardianAck?.accepted ? (
-                          <ShieldCheck className="w-4 h-4" />
+                          <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                        ) : guardianAck?.rejected ? (
+                          <ShieldX className="w-5 h-5 text-rose-600" />
                         ) : (
-                          <Clock className="w-4 h-4" />
+                          <Clock className="w-5 h-5 text-blue-600" />
                         )}
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-800">
+                        <p className="text-xs font-bold text-slate-900">
                           Parent Responsibility Status
                         </p>
-                        <p className="text-[11px] text-slate-500">
+                        <p className="text-[11px] text-slate-500 mt-0.5">
                           {guardianAck?.accepted 
-                            ? `Accepted by ${guardianAck.from?.first_name || 'Parent'} via Telegram`
-                            : guardianAck
-                            ? `Unable to respond (${guardianAck.from?.first_name || 'Parent'})`
+                            ? `Accepted by ${guardianAck.from?.first_name || 'Parent'} on Telegram`
+                            : guardianAck?.rejected
+                            ? `Declined / Unable to respond (${guardianAck.from?.first_name || 'Parent'})`
                             : 'Waiting for parent confirmation on Telegram...'}
                         </p>
                       </div>
@@ -305,12 +313,12 @@ export default function SosButton({ size = 'large' }) {
 
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
                       guardianAck?.accepted
-                        ? 'bg-emerald-500 text-white shadow-xs'
-                        : guardianAck
-                        ? 'bg-amber-500 text-white'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : guardianAck?.rejected
+                        ? 'bg-rose-600 text-white shadow-xs'
                         : 'bg-blue-100 text-blue-700'
                     }`}>
-                      {guardianAck?.accepted ? 'Responsibility Taken ✓' : guardianAck ? 'Declined' : 'Pending Response'}
+                      {guardianAck?.accepted ? 'Responsibility Taken ✓' : guardianAck?.rejected ? 'Rejected / Unable' : 'Pending Response'}
                     </span>
                   </div>
                 </div>
