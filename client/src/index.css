@@ -17,6 +17,90 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     -webkit-tap-highlight-color: transparent;
     overflow-x: hidden;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  /* Global Dark Mode Overrides */
+  html.dark body {
+    background-color: #0B1118;
+    color: #F1F5F9;
+  }
+
+  html.dark .bg-white {
+    background-color: #141E28 !important;
+    border-color: #1E2D3D !important;
+    color: #F1F5F9 !important;
+  }
+
+  html.dark .bg-\[\#F3F6F5\] {
+    background-color: #0B1118 !important;
+  }
+
+  html.dark .bg-\[\#F4F8F6\] {
+    background-color: #122420 !important;
+    border-color: #183C35 !important;
+  }
+
+  html.dark .bg-\[\#E8F4F1\] {
+    background-color: #102B26 !important;
+    border-color: #1B453D !important;
+    color: #A7F3D0 !important;
+  }
+
+  html.dark .bg-slate-50 {
+    background-color: #0F1722 !important;
+    border-color: #1E2D3D !important;
+  }
+
+  html.dark .bg-slate-100 {
+    background-color: #172433 !important;
+  }
+
+  html.dark header {
+    background-color: rgba(20, 30, 40, 0.95) !important;
+    border-color: #1E2D3D !important;
+  }
+
+  html.dark .text-slate-900 {
+    color: #F8FAFC !important;
+  }
+
+  html.dark .text-slate-800 {
+    color: #F1F5F9 !important;
+  }
+
+  html.dark .text-slate-700 {
+    color: #E2E8F0 !important;
+  }
+
+  html.dark .text-slate-600 {
+    color: #CBD5E1 !important;
+  }
+
+  html.dark .text-slate-500 {
+    color: #94A3B8 !important;
+  }
+
+  html.dark .text-slate-400 {
+    color: #64748B !important;
+  }
+
+  html.dark .border-slate-100,
+  html.dark .border-slate-200 {
+    border-color: #1E2D3D !important;
+  }
+
+  html.dark input,
+  html.dark textarea,
+  html.dark select {
+    background-color: #0F1722 !important;
+    border-color: #26384C !important;
+    color: #F8FAFC !important;
+  }
+
+  html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+  html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #1E2D3D !important;
   }
 }
 

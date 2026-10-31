@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
-import { Shield, Bell, ChevronDown, LogOut, User, Settings, CheckCircle2 } from 'lucide-react';
+import { Shield, Bell, ChevronDown, LogOut, User, Settings, CheckCircle2, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSafety } from '../context/SafetyContext';
+import { useTheme } from '../context/ThemeContext';
 import SosButton from './SosButton';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const { activeIncident, resolveIncident } = useSafety();
+  const { theme, isDark, toggleTheme } = useTheme();
   const [profileDropdown, setProfileDropdown] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -67,6 +69,16 @@ export default function Layout({ children }) {
             <div className="hidden sm:block">
               <SosButton size="compact" />
             </div>
+
+            {/* Dark Mode Toggle Switch */}
+            <button
+              onClick={toggleTheme}
+              className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-300 transition"
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              aria-label="Toggle theme"
+            >
+              {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-600" />}
+            </button>
 
             {/* Notification Bell */}
             <Link
