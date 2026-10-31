@@ -71,9 +71,10 @@ Please tap an option below to confirm whether you are taking immediate responsib
 }
 
 // Check and process guardian acknowledgment updates from Telegram
-export async function processGuardianAcknowledgment(sinceUpdateId = 0) {
+export async function processGuardianAcknowledgment(incidentTimestamp = 0) {
   try {
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?limit=50`;
+    // Fetch last 10 updates to always get fresh clicks without cache
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=-10`;
     const res = await fetch(url);
     const data = await res.json();
     if (!data.ok || !Array.isArray(data.result) || data.result.length === 0) return null;
@@ -82,51 +83,41 @@ export async function processGuardianAcknowledgment(sinceUpdateId = 0) {
     const callbacks = data.result.filter(u => u.callback_query);
     if (callbacks.length === 0) return null;
 
-    // Get latest callback
-    const latest = callbacks[callbacks.length - 1].callback_query;
+    // Get the latest callback query
+    const latestUpdate = callbacks[callbacks.length - 1];
+    const latest = latestUpdate.callback_query;
     const isAccepted = latest.data && latest.data.includes('accept');
     const isRejected = latest.data && (latest.data.includes('reject') || latest.data.includes('decline'));
 
-    // Acknowledge the callback immediately so Telegram stops loading spinner on parent's phone
+    // Extract timestamp from callback_data (e.g. ack_accept_1793425545477)
+    const match = latest.data ? latest.data.match(/_(\d{10,})$/) : null;
+    const actionTime = match ? parseInt(match[1], 10) : 0;
+
+    // If this click is older than the current incident trigger, ignore it so it stays fresh!
+    if (incidentTimestamp && actionTime && actionTime < (incidentTimestamp - 10000)) {
+      return null;
+    }
+
+    // Acknowledge the callback immediately on Telegram so spinner stops
     try {
-      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
+      fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           callback_query_id: latest.id,
           text: isAccepted 
-            ? '✅ You accepted responsibility! ESTELA has been notified.' 
-            : '⚠️ You marked unable/rejected. Emergency backup will be notified.'
+            ? '✅ Responsibility accepted! ESTELA screen updated.' 
+            : '⚠️ Marked unable/rejected. ESTELA screen updated.'
         })
-      });
-
-      // Update Telegram message text to lock in the decision visually
-      if (latest.message) {
-        const timeNow = new Date().toLocaleTimeString();
-        const statusHeader = isAccepted 
-          ? `✅ *RESPONSIBILITY ACCEPTED*\nGuardian (${latest.from?.first_name || 'Parent'}) has accepted full responsibility at ${timeNow}.`
-          : `❌ *ALERT REJECTED / UNABLE TO RESPOND*\nGuardian (${latest.from?.first_name || 'Parent'}) was unable to respond at ${timeNow}.`;
-
-        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/editMessageText`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: latest.message.chat.id,
-            message_id: latest.message.message_id,
-            text: `${latest.message.text}\n\n━━━━━━━━━━━━━━━━━━━━\n${statusHeader}`,
-            parse_mode: 'Markdown'
-          })
-        });
-      }
-    } catch (e) {
-      // Ignore background notification errors
-    }
+      }).catch(() => {});
+    } catch (e) {}
 
     return {
       id: latest.id,
       from: latest.from,
       accepted: isAccepted,
       rejected: isRejected,
+      time: actionTime ? new Date(actionTime) : new Date(),
       timestamp: new Date().toISOString()
     };
   } catch (err) {

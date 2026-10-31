@@ -26,6 +26,8 @@ export default function SosButton({ size = 'large' }) {
   const handleOpenSos = () => {
     setErrorMsg(null);
     setSosResult(null);
+    setGuardianAck(null);
+    setTelegramStatus(null);
     setCountdown(3);
     setShowConfirmModal(true);
   };
@@ -33,6 +35,7 @@ export default function SosButton({ size = 'large' }) {
   const executeSos = async () => {
     try {
       setIsTriggering(true);
+      setIncidentCreatedAt(Date.now());
       const res = await triggerSOS();
       setSosResult(res);
     } catch (err) {
@@ -58,22 +61,23 @@ export default function SosButton({ size = 'large' }) {
 
   const [telegramStatus, setTelegramStatus] = useState(null);
   const [guardianAck, setGuardianAck] = useState(null);
+  const [incidentCreatedAt, setIncidentCreatedAt] = useState(null);
 
   // Poll for parent acknowledgment when alert is active
   React.useEffect(() => {
     let pollInterval;
     if (sosResult) {
       const checkAck = async () => {
-        const ack = await processGuardianAcknowledgment();
+        const ack = await processGuardianAcknowledgment(incidentCreatedAt);
         if (ack) {
           setGuardianAck(ack);
         }
       };
       checkAck();
-      pollInterval = setInterval(checkAck, 2500);
+      pollInterval = setInterval(checkAck, 1500);
     }
     return () => clearInterval(pollInterval);
-  }, [sosResult]);
+  }, [sosResult, incidentCreatedAt]);
 
   const handleSendTelegram = async () => {
     try {
