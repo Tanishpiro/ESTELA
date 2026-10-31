@@ -54,8 +54,11 @@ export default function SosButton({ size = 'large' }) {
   };
 
   const handleManualResolve = async () => {
-    if (activeIncident) {
-      await resolveIncident(activeIncident.id, 'User confirmed false alarm / safe state');
+    try {
+      const incidentId = activeIncident?.id || 'sos_current';
+      await resolveIncident(incidentId, 'User clicked I Am Now Safe');
+    } catch (e) {
+      console.warn('Error resolving incident:', e);
     }
     setShowConfirmModal(false);
     setSosResult(null);

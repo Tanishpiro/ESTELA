@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
-import { sendTelegramEmergencyAlert } from '../services/telegramService';
+import { sendTelegramEmergencyAlert, sendTelegramSafeConfirmation } from '../services/telegramService';
 
 const SafetyContext = createContext(null);
 
@@ -511,9 +511,21 @@ export function SafetyProvider({ children }) {
     return { success: true, contacts: updated };
   };
 
-  // Resolve Active Incident
+  // Resolve Active Incident & Notify Guardian That User Is Safe Now
   const resolveIncident = async (incidentId, note = 'Resolved safely') => {
     setActiveIncident(null);
+    try {
+      localStorage.removeItem(STORAGE_INCIDENTS);
+    } catch (e) {}
+
+    // Send Reassuring Safe Confirmation Message to Telegram Parent Bot
+    const loc = latestLocation;
+    sendTelegramSafeConfirmation({
+      userName: user?.name || 'Alex Chen',
+      latitude: loc?.latitude,
+      longitude: loc?.longitude
+    }).catch(err => console.warn('Safe confirmation notification notice:', err));
+
     if (token) {
       fetch(`/api/incidents/${incidentId}/resolve`, {
         method: 'POST',

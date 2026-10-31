@@ -73,6 +73,56 @@ Please tap an option below to confirm whether you are taking immediate responsib
   }
 }
 
+// Dispatches a reassuring "I AM SAFE NOW" confirmation message directly to the parent
+export async function sendTelegramSafeConfirmation({
+  userName = 'Alex Chen',
+  latitude,
+  longitude,
+  chatId = DEFAULT_CHAT_ID
+}) {
+  const targetChatId = chatId || DEFAULT_CHAT_ID;
+  const lat = latitude || 28.4788;
+  const lon = longitude || 76.9128;
+  const mapUrl = `https://maps.google.com/?q=${lat},${lon}`;
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const dateStr = now.toLocaleDateString();
+
+  const safeMessage = 
+`✅ *ESTELA SAFETY UPDATE: I AM SAFE NOW!* ✅
+━━━━━━━━━━━━━━━━━━━━
+👤 *User:* ${userName}
+📱 *Target Contact:* ${SINGLE_PRIMARY_NUMBER}
+🟢 *Status:* False alarm / Emergency safely resolved
+⏰ *Resolved At:* ${timeStr} (${dateStr})
+📍 *Current Location:* [View on Google Maps](${mapUrl})
+━━━━━━━━━━━━━━━━━━━━
+🙏 *Parent Notice:* The emergency alert has been officially called off. The user has confirmed they are completely safe and secure!`;
+
+  try {
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: targetChatId,
+        text: safeMessage,
+        parse_mode: 'Markdown',
+        disable_web_page_preview: false
+      })
+    });
+
+    const data = await response.json();
+    return {
+      success: data.ok,
+      messageId: data.result?.message_id
+    };
+  } catch (err) {
+    console.error('Failed to dispatch Telegram Safe Confirmation:', err);
+    return { success: false, error: err.message };
+  }
+}
+
 // Check and process guardian acknowledgment updates from Telegram
 export async function processGuardianAcknowledgment(incidentTimestamp) {
   try {
