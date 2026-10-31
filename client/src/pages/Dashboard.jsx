@@ -56,10 +56,10 @@ export default function Dashboard() {
             {/* Quick Actions Bar */}
             <div className="pt-2 flex flex-wrap items-center gap-3">
               <Link
-                to="/session"
-                className="linear-btn-primary px-5 py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2"
+                to="/ride"
+                className="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-950/40 transition"
               >
-                <span>Start Safety Session</span>
+                <span>🚗 Ride Safety (Rapido / Cab)</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
 

@@ -14,6 +14,7 @@ import SafetyHistoryPage from './pages/SafetyHistoryPage';
 import SettingsPage from './pages/SettingsPage';
 import ChildMonitorPage from './pages/ChildMonitorPage';
 import ChildAppPage from './pages/ChildAppPage';
+import RideSafetyPage from './pages/RideSafetyPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -69,6 +70,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <ChildAppPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/ride"
+                element={
+                  <ProtectedRoute>
+                    <RideSafetyPage />
                   </ProtectedRoute>
                 }
               />
