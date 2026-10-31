@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
-import { Shield, Bell, ChevronDown, LogOut, User, Sparkles, Activity } from 'lucide-react';
+import { Shield, Bell, ChevronDown, LogOut, User, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSafety } from '../context/SafetyContext';
 import SosButton from './SosButton';
@@ -26,27 +26,27 @@ export default function Layout({ children }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F17] text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-200">
+    <div className="min-h-screen bg-[#0D0B14] text-[#F3EEFA] flex flex-col font-sans selection:bg-purple-500/30 selection:text-purple-200">
       
-      {/* Linear-Style Blur Top Navbar */}
-      <header className="sticky top-0 z-40 bg-[#0B0F17]/80 backdrop-blur-xl border-b border-white/[0.07]">
+      {/* Soothing Lavender Frosted Top Navbar */}
+      <header className="sticky top-0 z-40 bg-[#0D0B14]/85 backdrop-blur-xl border-b border-purple-900/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
           
           {/* Logo & Brand */}
           <Link to="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 flex items-center justify-center text-slate-950 font-black shadow-sm group-hover:scale-105 transition">
-              <Shield className="w-4 h-4 fill-slate-950 stroke-none" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-b from-purple-400 via-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-purple-950 group-hover:scale-105 transition">
+              <Shield className="w-4 h-4 fill-white stroke-none" />
             </div>
             <div className="flex items-center gap-1.5">
               <span className="text-base font-black tracking-wider text-white">ESTELA</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.06] text-emerald-400 border border-white/[0.08]">
-                v2.4
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                lavender
               </span>
             </div>
           </Link>
 
           {/* Desktop Center Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1 p-1 rounded-full bg-white/[0.03] border border-white/[0.06]">
+          <nav className="hidden md:flex items-center gap-1 p-1 rounded-full bg-purple-950/30 border border-purple-900/30">
             {navLinks.map((item) => {
               const isActive = location.pathname === item.path;
               return (
@@ -55,8 +55,8 @@ export default function Layout({ children }) {
                   to={item.path}
                   className={`text-xs font-medium px-4 py-1.5 rounded-full transition-all ${
                     isActive
-                      ? 'bg-white/[0.08] text-white shadow-xs font-semibold'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
+                      ? 'bg-purple-500/20 text-purple-200 shadow-xs font-semibold border border-purple-500/30'
+                      : 'text-purple-300/70 hover:text-white hover:bg-purple-900/20'
                   }`}
                 >
                   {item.label}
@@ -75,12 +75,12 @@ export default function Layout({ children }) {
             {/* Notification Bell */}
             <Link
               to="/history"
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.05] transition relative border border-transparent hover:border-white/[0.06]"
+              className="p-2 rounded-xl text-purple-300 hover:text-white hover:bg-purple-900/20 transition relative border border-transparent hover:border-purple-800/40"
               title="Activity & Notifications"
             >
               <Bell className="w-4 h-4" />
               {activeIncident && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-[#0B0F17] animate-ping"></span>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-[#0D0B14] animate-ping"></span>
               )}
             </Link>
 
@@ -88,41 +88,41 @@ export default function Layout({ children }) {
             <div className="relative">
               <button
                 onClick={() => setProfileDropdown(!profileDropdown)}
-                className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full bg-white/[0.04] hover:bg-white/[0.08] transition border border-white/[0.08]"
+                className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full bg-purple-950/40 hover:bg-purple-900/30 transition border border-purple-800/40"
               >
-                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-bold text-[10px] uppercase">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 text-white flex items-center justify-center font-bold text-[10px] uppercase shadow-xs">
                   {user?.name ? user.name.slice(0, 2) : 'TA'}
                 </div>
-                <span className="text-xs font-medium text-slate-200 hidden sm:inline-block">
+                <span className="text-xs font-medium text-purple-200 hidden sm:inline-block">
                   {user?.name?.split(' ')[0] || 'Tanish'}
                 </span>
-                <ChevronDown className="w-3 h-3 text-slate-500" />
+                <ChevronDown className="w-3 h-3 text-purple-400" />
               </button>
 
               {/* Profile Dropdown Menu */}
               {profileDropdown && (
-                <div className="absolute right-0 mt-2 w-52 bg-[#121824] rounded-2xl shadow-2xl border border-white/[0.1] py-2 z-50 animate-in fade-in">
-                  <div className="px-4 py-2 border-b border-white/[0.06]">
+                <div className="absolute right-0 mt-2 w-52 bg-[#171326] rounded-2xl shadow-2xl border border-purple-800/40 py-2 z-50 animate-in fade-in">
+                  <div className="px-4 py-2 border-b border-purple-900/40">
                     <p className="text-xs font-bold text-white truncate">{user?.name || 'Tanish'}</p>
-                    <p className="text-[11px] text-slate-400 truncate">{user?.email || 'tanish@estela.app'}</p>
+                    <p className="text-[11px] text-purple-300/60 truncate">{user?.email || 'tanish@estela.app'}</p>
                   </div>
                   <Link
                     to="/settings"
                     onClick={() => setProfileDropdown(false)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-300 hover:bg-white/[0.05] transition"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-purple-200 hover:bg-purple-900/20 transition"
                   >
-                    <User className="w-3.5 h-3.5 text-slate-500" />
+                    <User className="w-3.5 h-3.5 text-purple-400" />
                     Profile & Settings
                   </Link>
                   <Link
                     to="/contacts"
                     onClick={() => setProfileDropdown(false)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-300 hover:bg-white/[0.05] transition"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-purple-200 hover:bg-purple-900/20 transition"
                   >
-                    <Shield className="w-3.5 h-3.5 text-slate-500" />
+                    <Shield className="w-3.5 h-3.5 text-purple-400" />
                     Trusted Contacts
                   </Link>
-                  <div className="border-t border-white/[0.06] my-1"></div>
+                  <div className="border-t border-purple-900/40 my-1"></div>
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-rose-400 hover:bg-rose-500/10 transition font-medium text-left"
@@ -157,7 +157,7 @@ export default function Layout({ children }) {
       </main>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0B0F17]/90 backdrop-blur-xl border-t border-white/[0.08] py-2.5 px-4 z-40 flex justify-around items-center">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0D0B14]/90 backdrop-blur-xl border-t border-purple-900/40 py-2.5 px-4 z-40 flex justify-around items-center">
         {navLinks.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -165,7 +165,7 @@ export default function Layout({ children }) {
               key={item.path}
               to={item.path}
               className={`text-xs font-semibold py-1.5 px-3 rounded-full transition ${
-                isActive ? 'bg-white/[0.1] text-white border border-white/[0.12]' : 'text-slate-400'
+                isActive ? 'bg-purple-500/25 text-purple-200 border border-purple-500/40' : 'text-purple-300/60'
               }`}
             >
               {item.label}

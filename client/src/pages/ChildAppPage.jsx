@@ -14,7 +14,6 @@ export default function ChildAppPage() {
   const [isSirenPlaying, setIsSirenPlaying] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
-  // Sync with global alarm service
   useEffect(() => {
     const unsub = emergencyAlarm.subscribe((active) => {
       setIsSirenPlaying(active);
@@ -22,7 +21,6 @@ export default function ChildAppPage() {
     return unsub;
   }, []);
 
-  // 30-Second Countdown Timer when SOS is activated by Catty
   useEffect(() => {
     let timer;
     if (sosActive && countdown30s !== null && countdown30s > 0 && !isSirenPlaying) {
@@ -109,35 +107,35 @@ export default function ChildAppPage() {
   return (
     <div className="max-w-md mx-auto space-y-5 animate-in fade-in pb-16">
       
-      {/* 1. Linear Child Profile Header */}
+      {/* 1. Soothing Lavender Child Header */}
       <div className="linear-card rounded-3xl p-5 flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-500/20 to-rose-500/10 border border-pink-500/30 text-pink-400 flex items-center justify-center font-bold text-xl">
+          <div className="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center justify-center font-bold text-xl">
             👧
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-pink-500/15 border border-pink-500/30 text-pink-300 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-purple-500/20 border border-purple-500/30 text-purple-200 px-2 py-0.5 rounded-full">
                 Protected Child Device
               </span>
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
             </div>
             <h1 className="text-lg font-bold text-white mt-0.5">Catty's Phone</h1>
-            <p className="text-xs text-slate-400">Parent: <b className="text-emerald-400">Tanish</b> (+91 9306617122)</p>
+            <p className="text-xs text-purple-300/70">Parent: <b className="text-purple-300">Tanish</b> (+91 9306617122)</p>
           </div>
         </div>
       </div>
 
-      {/* 2. Linear Main SOS Action Box */}
+      {/* 2. Soothing Lavender Main SOS Box */}
       <div className="linear-card rounded-3xl p-6 sm:p-8 text-center space-y-6">
         <div>
           <h2 className="text-xl font-bold text-white">Emergency SOS</h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Tap the button below to immediately broadcast coordinates to Tanish.
+          <p className="text-xs text-purple-300/70 mt-1">
+            Tap button below to immediately broadcast coordinates to Tanish.
           </p>
         </div>
 
-        {/* Large Linear SOS Button for Catty */}
+        {/* Large SOS Button for Catty */}
         <div className="flex justify-center py-2">
           {!sosActive ? (
             <button
@@ -174,10 +172,10 @@ export default function ChildAppPage() {
               </span>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-purple-200/90 leading-relaxed">
               {countdown30s > 0 ? (
                 <>
-                  SOS notification sent to Tanish. If no guardian confirms within <b className="text-amber-400">{countdown30s} seconds</b>, the loud siren will automatically ring on Catty's phone and Tanish's phone.
+                  SOS notification sent to Tanish. If unconfirmed within <b className="text-amber-400">{countdown30s} seconds</b>, the loud siren will automatically ring on Catty's phone and Tanish's phone.
                 </>
               ) : (
                 <>
@@ -211,7 +209,7 @@ export default function ChildAppPage() {
         {sosActive && (
           <button
             onClick={handleResolveCattySafe}
-            className="w-full py-3.5 rounded-xl linear-btn-primary text-slate-950 font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl linear-btn-primary font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2"
           >
             <CheckCircle2 className="w-4 h-4" />
             <span>I Am Safe Now (Cancel Alert)</span>
@@ -221,24 +219,24 @@ export default function ChildAppPage() {
 
       {/* 5. Catty Location Status */}
       <div className="linear-card rounded-3xl p-5 space-y-3">
-        <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
+        <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-purple-300/70">
           Device Telemetry
         </h4>
 
         <div className="space-y-2 text-xs">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400">Live GPS Coordinates:</span>
-            <span className="font-mono font-bold text-cyan-400">{childLat.toFixed(4)}, {childLon.toFixed(4)}</span>
+            <span className="text-purple-300/70">Live GPS Coordinates:</span>
+            <span className="font-mono font-bold text-purple-300">{childLat.toFixed(4)}, {childLon.toFixed(4)}</span>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-slate-400">Guardian Parent:</span>
+            <span className="text-purple-300/70">Guardian Parent:</span>
             <span className="font-bold text-white">Tanish</span>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-slate-400">Guardian Phone:</span>
-            <a href="tel:+919306617122" className="font-mono font-bold text-emerald-400 underline">+91 9306617122</a>
+            <span className="text-purple-300/70">Guardian Phone:</span>
+            <a href="tel:+919306617122" className="font-mono font-bold text-purple-300 underline">+91 9306617122</a>
           </div>
         </div>
 

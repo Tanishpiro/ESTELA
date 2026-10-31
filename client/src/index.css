@@ -2,103 +2,87 @@
 
 @layer base {
   :root {
-    --color-primary: #0D3833;
-    --color-primary-light: #164E46;
-    --color-accent: #10B981;
-    --color-bg-light: #0B0F17;
-    --color-card: #121824;
-    --linear-border: rgba(255, 255, 255, 0.08);
+    --color-primary: #7C3AED;
+    --color-primary-light: #A78BFA;
+    --color-accent: #C084FC;
+    --color-bg-dark: #0D0B14;
+    --color-card-dark: #151122;
+    --lavender-border: rgba(192, 132, 252, 0.12);
   }
 
   body {
-    background-color: #0B0F17;
-    color: #F1F5F9;
+    background-color: #0D0B14;
+    color: #F3EEFA;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-tap-highlight-color: transparent;
     overflow-x: hidden;
     letter-spacing: -0.01em;
   }
 
-  /* Linear-style Smooth Scrollbar */
+  /* Soothing Lavender Smooth Scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #0B0F17;
+    background: #0D0B14;
   }
   ::-webkit-scrollbar-thumb {
-    background: #1E293B;
+    background: #231C35;
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #334155;
+    background: #3B2D59;
   }
 }
 
-/* Linear-Grade Card Gradients & Glassmorphism */
+/* Soothing Dark Lavender Cards & Glassmorphism */
 .linear-card {
-  background: radial-gradient(120% 120% at 50% 0%, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%), #111722;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.2);
+  background: radial-gradient(120% 120% at 50% 0%, rgba(192, 132, 252, 0.04) 0%, rgba(167, 139, 250, 0.01) 100%), #151122;
+  border: 1px solid rgba(192, 132, 252, 0.12);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 28px rgba(13, 11, 20, 0.4);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .linear-card:hover {
-  border-color: rgba(255, 255, 255, 0.16);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 16px 36px rgba(0, 0, 0, 0.35);
+  border-color: rgba(192, 132, 252, 0.28);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(124, 58, 237, 0.15);
   transform: translateY(-1px);
 }
 
-.linear-glow-emerald {
-  box-shadow: 0 0 40px -10px rgba(16, 185, 129, 0.3);
+.linear-glow-lavender {
+  box-shadow: 0 0 45px -8px rgba(167, 139, 250, 0.35);
 }
 
 .linear-glow-rose {
   box-shadow: 0 0 50px -10px rgba(244, 63, 94, 0.4);
 }
 
-/* Linear Accent Border Gradient */
-.linear-gradient-border {
-  position: relative;
-  background: #111722;
-  border-radius: 1.5rem;
-}
-.linear-gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.02) 100%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-/* Linear Sub-Pixel Button Styling */
+/* Linear Sub-Pixel Button Styling with Soothing Lavender */
 .linear-btn-primary {
-  background: linear-gradient(180deg, #10B981 0%, #059669 100%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 2px 8px rgba(16, 185, 129, 0.25);
+  background: linear-gradient(180deg, #A78BFA 0%, #7C3AED 100%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 2px 10px rgba(124, 58, 237, 0.35);
+  color: #FFFFFF;
   transition: all 0.15s ease;
 }
 .linear-btn-primary:hover {
-  background: linear-gradient(180deg, #34D399 0%, #059669 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 4px 14px rgba(16, 185, 129, 0.4);
+  background: linear-gradient(180deg, #C084FC 0%, #8B5CF6 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 4px 16px rgba(167, 139, 250, 0.5);
   transform: translateY(-0.5px);
 }
 
 .linear-btn-secondary {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: rgba(167, 139, 250, 0.06);
+  border: 1px solid rgba(192, 132, 252, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: #E9D5FF;
   transition: all 0.15s ease;
 }
 .linear-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(167, 139, 250, 0.12);
+  border-color: rgba(192, 132, 252, 0.3);
+  color: #FFFFFF;
 }
 
 /* Pulsing radar effect */
