@@ -16,6 +16,10 @@
       "destination": "/api/auth/me"
     },
     {
+      "source": "/api/incidents/sos",
+      "destination": "/api/incidents/sos"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index"
     },
