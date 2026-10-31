@@ -1,6 +1,7 @@
-// Robust Multi-Engine Alarm Sound Generator
-// Uses AudioContext oscillator (high-frequency siren) + HTML5 Audio fallback
-// Automatically unlocks audio context on first user tap/click on the page
+// Dual-Engine High-Reliability Emergency Siren Alarm
+// 1. HTML5 Audio with embedded looping emergency siren (works on mobile browsers without AudioContext restrictions)
+// 2. Web Audio API Oscillator (High-pitch 1100Hz-750Hz wail)
+// 3. Hardware phone vibration
 
 const ALARM_STORAGE_KEY = 'estela_active_alarm_state';
 
@@ -10,11 +11,21 @@ class EmergencyAlarmService {
     this.sirenInterval = null;
     this.isPlaying = false;
     this.listeners = new Set();
-    this.fallbackAudio = null;
+    this.audioElement = null;
 
-    // Attach unlocker to first user interaction
     if (typeof window !== 'undefined') {
-      const unlockAudio = () => {
+      try {
+        // Pre-create HTML5 Audio element pointing to /alarm.wav
+        this.audioElement = new Audio('/alarm.wav');
+        this.audioElement.loop = true;
+        this.audioElement.volume = 1.0;
+        this.audioElement.preload = 'auto';
+      } catch (e) {
+        console.warn('Audio element init error:', e);
+      }
+
+      // Pre-unlock audio on ANY interaction (click, touch, keydown)
+      const unlockAllAudio = () => {
         try {
           if (!this.audioCtx) {
             this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -22,13 +33,23 @@ class EmergencyAlarmService {
           if (this.audioCtx && this.audioCtx.state === 'suspended') {
             this.audioCtx.resume();
           }
+          if (this.audioElement && this.audioElement.paused && !this.isPlaying) {
+            // Muted play & pause to unlock mobile Safari/Chrome autoplay gate
+            this.audioElement.volume = 0;
+            this.audioElement.play().then(() => {
+              this.audioElement.pause();
+              this.audioElement.currentTime = 0;
+              this.audioElement.volume = 1.0;
+            }).catch(() => {});
+          }
         } catch (e) {}
       };
 
-      window.addEventListener('click', unlockAudio, { once: false, passive: true });
-      window.addEventListener('touchstart', unlockAudio, { once: false, passive: true });
+      window.addEventListener('click', unlockAllAudio, { passive: true });
+      window.addEventListener('touchstart', unlockAllAudio, { passive: true });
+      window.addEventListener('keydown', unlockAllAudio, { passive: true });
 
-      // Listen to cross-window events (Parent Portal <-> Child App)
+      // Cross-tab/Cross-window storage event sync
       window.addEventListener('storage', (e) => {
         if (e.key === ALARM_STORAGE_KEY) {
           try {
@@ -51,6 +72,9 @@ class EmergencyAlarmService {
       }
       if (this.audioCtx && this.audioCtx.state === 'suspended') {
         this.audioCtx.resume();
+      }
+      if (this.audioElement) {
+        this.audioElement.volume = 1.0;
       }
     } catch (e) {}
   }
@@ -78,53 +102,68 @@ class EmergencyAlarmService {
     this.isPlaying = true;
     this.notify();
 
-    // 1. AudioContext Oscillator Siren
+    // 1. PLAY HTML5 AUDIO (Guaranteed audio track)
+    try {
+      if (!this.audioElement) {
+        this.audioElement = new Audio('/alarm.wav');
+        this.audioElement.loop = true;
+      }
+      this.audioElement.volume = 1.0;
+      this.audioElement.currentTime = 0;
+      const playPromise = this.audioElement.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('Audio element play deferred or blocked:', err);
+        });
+      }
+    } catch (err) {
+      console.warn('HTML5 Audio play error:', err);
+    }
+
+    // 2. PLAY WEB AUDIO API OSCILLATOR SYNTHESIZER
     try {
       this.unlock();
       const ctx = this.audioCtx;
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume();
+      }
 
       let highTone = true;
       const playTone = () => {
         if (!this.isPlaying) return;
         try {
-          if (!this.audioCtx) {
-            this.unlock();
-          }
+          if (!this.audioCtx) this.unlock();
           const currentCtx = this.audioCtx;
           if (!currentCtx) return;
-          if (currentCtx.state === 'suspended') {
-            currentCtx.resume();
-          }
+          if (currentCtx.state === 'suspended') currentCtx.resume();
 
           const osc = currentCtx.createOscillator();
           const gain = currentCtx.createGain();
 
           osc.type = 'sawtooth';
-          const freq = highTone ? 1100 : 750;
+          const freq = highTone ? 1200 : 780;
           osc.frequency.setValueAtTime(freq, currentCtx.currentTime);
-          osc.frequency.linearRampToValueAtTime(highTone ? 750 : 1100, currentCtx.currentTime + 0.3);
+          osc.frequency.linearRampToValueAtTime(highTone ? 780 : 1200, currentCtx.currentTime + 0.32);
 
-          gain.gain.setValueAtTime(0.5, currentCtx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, currentCtx.currentTime + 0.35);
+          gain.gain.setValueAtTime(0.6, currentCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, currentCtx.currentTime + 0.36);
 
           osc.connect(gain);
           gain.connect(currentCtx.destination);
 
           osc.start(currentCtx.currentTime);
-          osc.stop(currentCtx.currentTime + 0.35);
+          osc.stop(currentCtx.currentTime + 0.36);
           highTone = !highTone;
-        } catch (err) {
-          console.warn('Oscillator error:', err);
-        }
+        } catch (e) {}
       };
 
       playTone();
       this.sirenInterval = setInterval(playTone, 380);
     } catch (err) {
-      console.warn('AudioContext Siren failed:', err);
+      console.warn('Oscillator alarm engine error:', err);
     }
 
-    // 2. Hardware Vibration for phones
+    // 3. HARDWARE PHONE VIBRATION
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
         navigator.vibrate([600, 200, 600, 200, 800]);
@@ -140,11 +179,22 @@ class EmergencyAlarmService {
     }
 
     this.isPlaying = false;
+
+    // Stop HTML5 Audio
+    try {
+      if (this.audioElement) {
+        this.audioElement.pause();
+        this.audioElement.currentTime = 0;
+      }
+    } catch (e) {}
+
+    // Stop Oscillator
     if (this.sirenInterval) {
       clearInterval(this.sirenInterval);
       this.sirenInterval = null;
     }
 
+    // Stop Phone Vibration
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
         navigator.vibrate(0);

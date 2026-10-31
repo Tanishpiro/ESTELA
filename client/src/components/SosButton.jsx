@@ -188,29 +188,34 @@ export default function SosButton({ size = 'large' }) {
       {size === 'compact' && (
         <button
           onClick={handleOpenSos}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs transition border border-red-200/80"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black text-xs transition shadow-md shadow-rose-950/50 border border-rose-400/30 active:scale-95 cursor-pointer"
         >
-          <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-          SOS
+          <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
+          <span>EMERGENCY SOS</span>
         </button>
       )}
 
       {size === 'bar' && (
         <button
           onClick={handleOpenSos}
-          className="w-full py-3.5 px-4 rounded-2xl bg-red-50 hover:bg-red-100 border border-red-200/80 text-left flex items-center justify-between transition group shadow-xs"
+          className="w-full py-5 px-6 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-500 border-2 border-rose-400/40 text-left flex items-center justify-between transition-all duration-200 group shadow-xl shadow-rose-950/60 active:scale-[0.98] cursor-pointer"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center font-black text-xs">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm text-white flex items-center justify-center font-black text-lg border border-white/30 shadow-inner group-hover:scale-105 transition">
               SOS
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-800">Emergency SOS</p>
-              <p className="text-[11px] text-slate-400">Tap to instantly alert contacts</p>
+              <p className="text-base sm:text-lg font-black text-white tracking-wide flex items-center gap-2">
+                <span>PRESS FOR EMERGENCY SOS</span>
+                <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+              </p>
+              <p className="text-xs text-rose-100 font-medium mt-0.5">
+                Instant GPS broadcast & loud siren alert to Tanish
+              </p>
             </div>
           </div>
-          <span className="text-xs font-bold text-red-600 group-hover:translate-x-0.5 transition">
-            Trigger Alert →
+          <span className="text-xs sm:text-sm font-black text-white bg-white/20 px-3.5 py-1.5 rounded-xl border border-white/30 group-hover:translate-x-1 transition hidden sm:inline-block">
+            TRIGGER NOW →
           </span>
         </button>
       )}
@@ -220,14 +225,14 @@ export default function SosButton({ size = 'large' }) {
           <button
             onClick={handleOpenSos}
             aria-label="Emergency SOS Button"
-            className="w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-red-500 hover:bg-red-600 text-white font-black text-3xl sm:text-4xl shadow-xl flex flex-col items-center justify-center transition-transform active:scale-95 border-4 border-white sos-pulse-ring cursor-pointer"
+            className="w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-gradient-to-b from-rose-500 via-red-600 to-red-700 hover:from-rose-400 hover:to-red-600 text-white font-black text-4xl sm:text-5xl shadow-2xl flex flex-col items-center justify-center transition-all duration-200 active:scale-95 border-6 border-rose-300/40 sos-pulse-ring cursor-pointer"
           >
-            <span>SOS</span>
-            <span className="text-[11px] font-semibold tracking-normal uppercase opacity-90 mt-1">
-              Emergency
+            <span className="drop-shadow-md">SOS</span>
+            <span className="text-[12px] font-mono tracking-widest uppercase opacity-95 mt-1 font-bold">
+              EMERGENCY
             </span>
           </button>
-          <p className="text-xs text-slate-400 font-medium mt-3 text-center">
+          <p className="text-xs sm:text-sm text-purple-300/80 font-bold mt-4 text-center">
             Tap for instant emergency dispatch with live GPS
           </p>
         </div>

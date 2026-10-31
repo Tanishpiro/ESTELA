@@ -151,9 +151,28 @@ export default function Layout({ children }) {
       )}
 
       {/* Main Content Viewport */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-8 pb-28 md:pb-8">
         {children}
       </main>
+
+      {/* Floating Bottom Handy SOS Bar for Mobile & Fast Emergency Access */}
+      <div className="fixed bottom-16 md:bottom-6 right-4 sm:right-8 z-50 animate-in fade-in">
+        <button
+          onClick={() => {
+            const el = document.querySelector('[aria-label="Emergency SOS Button"]') || document.querySelector('.sos-pulse-ring');
+            if (el) {
+              el.click();
+            } else {
+              const navSos = document.querySelector('header button');
+              if (navSos) navSos.click();
+            }
+          }}
+          className="px-5 py-3.5 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white font-black text-sm tracking-wide shadow-2xl shadow-rose-950/80 border-2 border-white/30 flex items-center gap-2.5 active:scale-95 transition-all cursor-pointer hover:shadow-rose-600/50 hover:scale-105"
+        >
+          <span className="w-3 h-3 rounded-full bg-white animate-ping"></span>
+          <span>🚨 SOS QUICK TAP</span>
+        </button>
+      </div>
 
       {/* Mobile Bottom Navigation Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0D0B14]/90 backdrop-blur-xl border-t border-purple-900/40 py-2.5 px-4 z-40 flex justify-around items-center">
