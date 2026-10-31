@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Shield, CheckCircle2, Clock, Users, MapPin, 
-  ChevronRight, ArrowRight, Sparkles, Navigation 
+  ChevronRight, ArrowRight, Sparkles, Navigation, Baby 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSafety } from '../context/SafetyContext';
@@ -58,7 +58,7 @@ export default function Dashboard() {
             </span>
             <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mt-0.5">
               Good evening,<br />
-              {user?.name?.split(' ')[0] || 'Alex'} 👋
+              {user?.name?.split(' ')[0] || 'Tanish'} 👋
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
               Stay aware. Stay safe. You've got this.
@@ -79,17 +79,55 @@ export default function Dashboard() {
             <ChevronRight className="w-4 h-4 text-slate-400" />
           </div>
 
-          {/* Primary CTA: Start a Safety Session */}
-          <div className="pt-2">
+          {/* Primary CTA: Start a Safety Session & Child Monitor */}
+          <div className="pt-2 flex flex-wrap items-center gap-3">
             <Link
               to="/session"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-[#0D3833] hover:bg-[#164E46] text-white font-bold text-sm transition shadow-sm group"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-[#0D3833] hover:bg-[#164E46] text-white font-bold text-sm transition shadow-sm group"
             >
               Start a Safety Session
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
             </Link>
+
+            <Link
+              to="/child"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[#0D3833] font-bold text-sm transition group"
+            >
+              <Baby className="w-4 h-4 text-emerald-600" />
+              <span>Track Catty (Child)</span>
+            </Link>
           </div>
         </div>
+      </div>
+
+      {/* Child Guardian Quick Banner for Tanish */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-100/60 border border-emerald-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-[#0D3833] text-white flex items-center justify-center shadow-sm">
+            <Baby className="w-6 h-6 text-emerald-300" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-200/70 px-2 py-0.5 rounded-full">
+                Parent Portal • Tanish
+              </span>
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            </div>
+            <h3 className="text-base font-bold text-slate-900 mt-0.5">
+              Catty's Safety & Location Monitor
+            </h3>
+            <p className="text-xs text-slate-600">
+              Check live GPS, device battery, safe zones & send instant prompts to Catty.
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/child"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0D3833] hover:bg-[#164E46] text-white text-xs font-bold transition shadow-xs self-start sm:self-auto whitespace-nowrap"
+        >
+          <span>Open Catty's Portal</span>
+          <ChevronRight className="w-4 h-4" />
+        </Link>
       </div>
 
       {/* 2. Four Quick-Action Bottom Cards */}

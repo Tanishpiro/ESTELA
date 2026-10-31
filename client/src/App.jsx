@@ -12,6 +12,7 @@ import MapPage from './pages/MapPage';
 import ContactsPage from './pages/ContactsPage';
 import SafetyHistoryPage from './pages/SafetyHistoryPage';
 import SettingsPage from './pages/SettingsPage';
+import ChildMonitorPage from './pages/ChildMonitorPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -51,6 +52,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/child"
+                element={
+                  <ProtectedRoute>
+                    <ChildMonitorPage />
                   </ProtectedRoute>
                 }
               />

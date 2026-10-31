@@ -16,7 +16,8 @@ export default function Layout({ children }) {
 
   const navLinks = [
     { label: 'Home', path: '/dashboard' },
-    { label: 'Map', path: '/map' },
+    { label: 'Child (Catty)', path: '/child' },
+    { label: 'Safe Map', path: '/map' },
     { label: 'History', path: '/history' },
     { label: 'Contacts', path: '/contacts' },
   ];
