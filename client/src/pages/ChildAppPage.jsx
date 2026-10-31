@@ -12,7 +12,6 @@ export default function ChildAppPage() {
   const [sosActive, setSosActive] = useState(false);
   const [countdown30s, setCountdown30s] = useState(null);
   const [isSirenPlaying, setIsSirenPlaying] = useState(false);
-  const [parentAckStatus, setParentAckStatus] = useState('WAITING'); // WAITING, CONFIRMED
   const [isSending, setIsSending] = useState(false);
 
   // Sync with global alarm service
@@ -31,7 +30,6 @@ export default function ChildAppPage() {
         setCountdown30s((c) => {
           if (c <= 1) {
             clearInterval(timer);
-            // 30 seconds elapsed and no response! Ring loud alarm on Catty's phone and Parent's phone!
             emergencyAlarm.start(true);
             return 0;
           }
@@ -45,16 +43,14 @@ export default function ChildAppPage() {
   }, [sosActive, countdown30s, isSirenPlaying]);
 
   const handleTriggerCattySos = async () => {
-    emergencyAlarm.unlock(); // Ensure audio context is ready on user tap
+    emergencyAlarm.unlock();
     setIsSending(true);
     setSosActive(true);
     setCountdown30s(30);
-    setParentAckStatus('WAITING');
 
     const lat = latestLocation?.latitude || 28.4788;
     const lon = latestLocation?.longitude || 76.9128;
 
-    // 1. Post to Server Relay endpoint so Tanish's parent phone immediately triggers
     try {
       await fetch('/api/incidents/sos', {
         method: 'POST',
@@ -69,7 +65,6 @@ export default function ChildAppPage() {
       });
     } catch (e) {}
 
-    // 2. Dispatch Telegram alert directly to Tanish
     try {
       await sendTelegramEmergencyAlert({
         childName: 'Catty',
@@ -88,9 +83,7 @@ export default function ChildAppPage() {
     emergencyAlarm.stop(true);
     setSosActive(false);
     setCountdown30s(null);
-    setParentAckStatus('CONFIRMED');
 
-    // Notify server to resolve
     try {
       await fetch('/api/incidents/sos', {
         method: 'POST',
@@ -99,7 +92,6 @@ export default function ChildAppPage() {
       });
     } catch (e) {}
 
-    // Send Telegram reassurance that Catty is safe
     try {
       await sendTelegramSafeConfirmation({
         childName: 'Catty',
@@ -115,77 +107,77 @@ export default function ChildAppPage() {
   const gmapsUrl = `https://maps.google.com/?q=${childLat},${childLon}`;
 
   return (
-    <div className="max-w-md mx-auto space-y-5 animate-in fade-in pb-12">
+    <div className="max-w-md mx-auto space-y-5 animate-in fade-in pb-16">
       
-      {/* 1. Catty Child Profile Header */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs flex items-center justify-between">
+      {/* 1. Linear Child Profile Header */}
+      <div className="linear-card rounded-3xl p-5 flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-13 h-13 rounded-2xl bg-pink-100 text-pink-600 flex items-center justify-center font-black text-xl shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-500/20 to-rose-500/10 border border-pink-500/30 text-pink-400 flex items-center justify-center font-bold text-xl">
             👧
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-wider bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">
-                Child Device
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-pink-500/15 border border-pink-500/30 text-pink-300 px-2 py-0.5 rounded-full">
+                Protected Child Device
               </span>
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             </div>
-            <h1 className="text-xl font-black text-slate-900 mt-0.5">Catty's Phone</h1>
-            <p className="text-xs text-slate-500">Linked to Parent: <b>Tanish</b> (+91 9306617122)</p>
+            <h1 className="text-lg font-bold text-white mt-0.5">Catty's Phone</h1>
+            <p className="text-xs text-slate-400">Parent: <b className="text-emerald-400">Tanish</b> (+91 9306617122)</p>
           </div>
         </div>
       </div>
 
-      {/* 2. Main SOS Trigger Box */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm text-center space-y-6">
+      {/* 2. Linear Main SOS Action Box */}
+      <div className="linear-card rounded-3xl p-6 sm:p-8 text-center space-y-6">
         <div>
-          <h2 className="text-xl font-black text-slate-900">Emergency SOS</h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Tap button below to alert Tanish with live GPS coordinates.
+          <h2 className="text-xl font-bold text-white">Emergency SOS</h2>
+          <p className="text-xs text-slate-400 mt-1">
+            Tap the button below to immediately broadcast coordinates to Tanish.
           </p>
         </div>
 
-        {/* Large One-Tap SOS Button for Catty */}
+        {/* Large Linear SOS Button for Catty */}
         <div className="flex justify-center py-2">
           {!sosActive ? (
             <button
               onClick={handleTriggerCattySos}
               disabled={isSending}
-              className="w-44 h-44 rounded-full bg-gradient-to-tr from-red-600 to-rose-500 text-white font-black text-3xl shadow-xl flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 border-6 border-white sos-pulse-ring cursor-pointer"
+              className="w-44 h-44 rounded-full bg-gradient-to-b from-rose-500 to-red-700 text-white font-black text-3xl shadow-2xl flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 border-4 border-rose-300/40 sos-pulse-ring cursor-pointer"
             >
               <span>{isSending ? 'SENDING' : 'SOS'}</span>
-              <span className="text-[11px] font-bold tracking-normal uppercase opacity-90 mt-1">
+              <span className="text-[10px] font-mono font-semibold tracking-normal uppercase opacity-90 mt-1">
                 {isSending ? 'Alerting...' : 'Tap for Help'}
               </span>
             </button>
           ) : (
-            <div className="w-44 h-44 rounded-full bg-red-600 text-white flex flex-col items-center justify-center shadow-2xl border-4 border-red-200 animate-pulse">
-              <Siren className="w-10 h-10 mb-1" />
-              <span className="text-base font-black uppercase">SOS SENT</span>
-              <span className="text-[11px] font-bold opacity-90">Tanish Alerted</span>
+            <div className="w-44 h-44 rounded-full bg-gradient-to-b from-red-600 to-rose-800 text-white flex flex-col items-center justify-center shadow-2xl border-4 border-red-400/50 animate-pulse">
+              <Siren className="w-10 h-10 mb-1 text-white" />
+              <span className="text-base font-black uppercase tracking-wider">SOS SENT</span>
+              <span className="text-[10px] font-mono opacity-90 text-rose-200">Tanish Alerted</span>
             </div>
           )}
         </div>
 
         {/* 3. Live 30-Second Alarm Countdown Box */}
         {sosActive && (
-          <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-left space-y-3 animate-in fade-in">
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-left space-y-3 animate-in fade-in">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Siren className="w-5 h-5 text-amber-600 animate-bounce" />
-                <span className="text-xs font-black text-amber-950 uppercase">
+                <Siren className="w-4 h-4 text-amber-400 animate-bounce" />
+                <span className="text-xs font-mono font-bold text-amber-300 uppercase">
                   Auto-Escalation Timer
                 </span>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 font-black text-sm font-mono">
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold text-xs border border-amber-500/30">
                 {countdown30s > 0 ? `${countdown30s}s` : '0s - RINGING!'}
               </span>
             </div>
 
-            <p className="text-xs text-amber-800 leading-relaxed">
+            <p className="text-xs text-slate-300 leading-relaxed">
               {countdown30s > 0 ? (
                 <>
-                  SOS notification sent to Tanish. If no guardian confirms within <b>{countdown30s} seconds</b>, the loud siren will automatically ring on Catty's phone and Tanish's phone.
+                  SOS notification sent to Tanish. If no guardian confirms within <b className="text-amber-400">{countdown30s} seconds</b>, the loud siren will automatically ring on Catty's phone and Tanish's phone.
                 </>
               ) : (
                 <>
@@ -194,19 +186,19 @@ export default function ChildAppPage() {
               )}
             </p>
 
-            {/* Loud Alarm Ringing Action Button */}
+            {/* Siren Control Button */}
             {!isSirenPlaying ? (
               <button
                 onClick={() => emergencyAlarm.start(true)}
-                className="w-full py-3 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs transition flex items-center justify-center gap-2 shadow-sm animate-pulse"
+                className="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm animate-pulse"
               >
                 <Siren className="w-4 h-4" />
-                <span>Ring Loud Alarm Now On Catty & Parent Phone</span>
+                <span>Ring Loud Alarm Now On Both Phones</span>
               </button>
             ) : (
               <button
                 onClick={() => emergencyAlarm.stop(true)}
-                className="w-full py-3.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs transition flex items-center justify-center gap-2 shadow-lg ring-4 ring-red-300 animate-bounce"
+                className="w-full py-3.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg ring-4 ring-rose-500/40 animate-bounce"
               >
                 <VolumeX className="w-4 h-4" />
                 <span>STOP LOUD SIREN ALARM (Ringing Now!)</span>
@@ -219,34 +211,34 @@ export default function ChildAppPage() {
         {sosActive && (
           <button
             onClick={handleResolveCattySafe}
-            className="w-full py-3.5 rounded-2xl bg-[#0D3833] hover:bg-[#164E46] text-white font-black text-sm transition shadow-sm flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl linear-btn-primary text-slate-950 font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2"
           >
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4" />
             <span>I Am Safe Now (Cancel Alert)</span>
           </button>
         )}
       </div>
 
-      {/* 5. Catty Location & Guardian Contact */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-3">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-          Catty Device Status
+      {/* 5. Catty Location Status */}
+      <div className="linear-card rounded-3xl p-5 space-y-3">
+        <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
+          Device Telemetry
         </h4>
 
         <div className="space-y-2 text-xs">
           <div className="flex items-center justify-between">
-            <span className="text-slate-500">Live GPS Coordinates:</span>
-            <span className="font-mono font-bold text-slate-900">{childLat.toFixed(4)}, {childLon.toFixed(4)}</span>
+            <span className="text-slate-400">Live GPS Coordinates:</span>
+            <span className="font-mono font-bold text-cyan-400">{childLat.toFixed(4)}, {childLon.toFixed(4)}</span>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-slate-500">Guardian Parent:</span>
-            <span className="font-bold text-slate-900">Tanish</span>
+            <span className="text-slate-400">Guardian Parent:</span>
+            <span className="font-bold text-white">Tanish</span>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-slate-500">Guardian Mobile:</span>
-            <a href="tel:+919306617122" className="font-bold text-emerald-700 underline">+91 9306617122</a>
+            <span className="text-slate-400">Guardian Phone:</span>
+            <a href="tel:+919306617122" className="font-mono font-bold text-emerald-400 underline">+91 9306617122</a>
           </div>
         </div>
 
@@ -254,9 +246,9 @@ export default function ChildAppPage() {
           href={gmapsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold transition border border-slate-200 mt-2"
+          className="linear-btn-secondary inline-flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-white text-xs font-bold mt-2"
         >
-          <span>View Catty Location on Google Maps</span>
+          <span>View Coordinates in Google Maps</span>
           <ExternalLink className="w-3.5 h-3.5" />
         </a>
       </div>
