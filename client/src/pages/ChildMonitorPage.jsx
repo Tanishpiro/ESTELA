@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Baby, Shield, MapPin, Battery, Phone, BellRing, 
-  CheckCircle2, AlertTriangle, Navigation, ExternalLink, RefreshCw, Volume2 
+  CheckCircle2, AlertTriangle, Navigation, ExternalLink, RefreshCw, Volume2, VolumeX, Siren, ShieldAlert 
 } from 'lucide-react';
 import { useSafety } from '../context/SafetyContext';
 import SafetyMap from '../components/SafetyMap';
 import { sendTelegramSafeConfirmation } from '../services/telegramService';
+import emergencyAlarm from '../services/alarmService';
 
 export default function ChildMonitorPage() {
   const { latestLocation } = useSafety();
@@ -14,6 +15,20 @@ export default function ChildMonitorPage() {
   const [childStatus, setChildStatus] = useState('SAFE'); // SAFE, SOS_TRIGGERED, MOVING
   const [batteryLevel, setBatteryLevel] = useState(88);
   const [pingSent, setPingSent] = useState(false);
+  const [isParentAlarmActive, setIsParentAlarmActive] = useState(false);
+  const [unresponsiveAlert, setUnresponsiveAlert] = useState(true);
+
+  // Sync with global alarm service
+  useEffect(() => {
+    const unsub = emergencyAlarm.subscribe((active) => {
+      setIsParentAlarmActive(active);
+    });
+    return unsub;
+  }, []);
+
+  const toggleParentAlarm = () => {
+    emergencyAlarm.toggle();
+  };
 
   // Child details
   const childInfo = {
@@ -198,6 +213,42 @@ export default function ChildMonitorPage() {
             </h4>
 
             <div className="space-y-2">
+              {/* Parent Emergency Phone Alarm (When No One Responded) */}
+              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-amber-900 font-extrabold text-xs">
+                    <Siren className="w-4 h-4 text-amber-600" />
+                    <span>Unresponsive Child SOS Alarm</span>
+                  </div>
+                  <span className="text-[10px] bg-amber-200/80 text-amber-900 font-black px-2 py-0.5 rounded-full uppercase">
+                    Parent App Alert
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  If Catty triggered SOS or missed check-in and no guardian confirmed on Telegram, trigger high-decibel siren on this parent phone.
+                </p>
+                <button
+                  onClick={toggleParentAlarm}
+                  className={`w-full py-3 px-3 rounded-xl font-black text-xs transition flex items-center justify-center gap-2 shadow-sm ${
+                    isParentAlarmActive
+                      ? 'bg-red-600 hover:bg-red-700 text-white animate-bounce ring-4 ring-red-300'
+                      : 'bg-amber-600 hover:bg-amber-700 text-white animate-pulse'
+                  }`}
+                >
+                  {isParentAlarmActive ? (
+                    <>
+                      <VolumeX className="w-4 h-4" />
+                      <span>SILENCE PARENT ALARM (Siren Ringing!)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Siren className="w-4 h-4" />
+                      <span>Ring Loud Alarm On Parent Phone</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
               <button
                 onClick={handleSendParentCheckinPing}
                 className="w-full py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-xs"

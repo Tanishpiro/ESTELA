@@ -6,6 +6,7 @@ import {
 import { useSafety } from '../context/SafetyContext';
 import { useAuth } from '../context/AuthContext';
 import { sendTelegramEmergencyAlert, processGuardianAcknowledgment } from '../services/telegramService';
+import emergencyAlarm from '../services/alarmService';
 
 export default function SosButton({ size = 'large' }) {
   const { triggerSOS, activeIncident, resolveIncident, contacts, latestLocation } = useSafety();
@@ -73,63 +74,21 @@ export default function SosButton({ size = 'large' }) {
   const [guardianAck, setGuardianAck] = useState(null);
   const [incidentCreatedAt, setIncidentCreatedAt] = useState(null);
   const [isSirenActive, setIsSirenActive] = useState(false);
-  const audioContextRef = useRef(null);
-  const sirenIntervalRef = useRef(null);
 
-  // Siren Audio Synthesizer (Loud Emergency Police/Ambulance Wail)
+  // Subscribe to shared alarm service
+  useEffect(() => {
+    const unsub = emergencyAlarm.subscribe((active) => {
+      setIsSirenActive(active);
+    });
+    return unsub;
+  }, []);
+
   const startSirenAlarm = () => {
-    try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      const ctx = audioContextRef.current;
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
-
-      setIsSirenActive(true);
-
-      // Play continuous oscillating high-low emergency distress tone
-      let highTone = true;
-      const playTone = () => {
-        if (!audioContextRef.current) return;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(highTone ? 960 : 720, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(highTone ? 720 : 960, ctx.currentTime + 0.35);
-
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.38);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.38);
-        highTone = !highTone;
-      };
-
-      playTone();
-      sirenIntervalRef.current = setInterval(playTone, 400);
-
-      // Trigger phone hardware vibration if supported
-      if ('vibrate' in navigator) {
-        navigator.vibrate([400, 200, 400, 200, 400]);
-      }
-    } catch (e) {
-      console.warn('Audio alarm unavailable:', e);
-    }
+    emergencyAlarm.start();
   };
 
   const stopSirenAlarm = () => {
-    setIsSirenActive(false);
-    if (sirenIntervalRef.current) {
-      clearInterval(sirenIntervalRef.current);
-      sirenIntervalRef.current = null;
-    }
-    if ('vibrate' in navigator) {
-      navigator.vibrate(0);
-    }
+    emergencyAlarm.stop();
   };
 
   useEffect(() => {
