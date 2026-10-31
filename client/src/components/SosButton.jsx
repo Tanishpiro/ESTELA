@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
-import { AlertTriangle, X, ShieldAlert, CheckCircle2, Phone, BellRing, MessageSquare, Send, Check, ShieldCheck, Clock, ShieldX } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { 
+  AlertTriangle, X, ShieldAlert, CheckCircle2, Phone, BellRing, 
+  MessageSquare, Send, Check, ShieldCheck, Clock, ShieldX, Volume2, VolumeX, Siren 
+} from 'lucide-react';
 import { useSafety } from '../context/SafetyContext';
 import { useAuth } from '../context/AuthContext';
 import { sendTelegramEmergencyAlert, processGuardianAcknowledgment } from '../services/telegramService';
@@ -48,12 +51,14 @@ export default function SosButton({ size = 'large' }) {
   };
 
   const handleCancel = () => {
+    stopSirenAlarm();
     setShowConfirmModal(false);
     setCountdown(3);
     setIsTriggering(false);
   };
 
   const handleManualResolve = async () => {
+    stopSirenAlarm();
     try {
       const incidentId = activeIncident?.id || 'sos_current';
       await resolveIncident(incidentId, 'User clicked I Am Now Safe');
@@ -67,6 +72,69 @@ export default function SosButton({ size = 'large' }) {
   const [telegramStatus, setTelegramStatus] = useState(null);
   const [guardianAck, setGuardianAck] = useState(null);
   const [incidentCreatedAt, setIncidentCreatedAt] = useState(null);
+  const [isSirenActive, setIsSirenActive] = useState(false);
+  const audioContextRef = useRef(null);
+  const sirenIntervalRef = useRef(null);
+
+  // Siren Audio Synthesizer (Loud Emergency Police/Ambulance Wail)
+  const startSirenAlarm = () => {
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const ctx = audioContextRef.current;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      setIsSirenActive(true);
+
+      // Play continuous oscillating high-low emergency distress tone
+      let highTone = true;
+      const playTone = () => {
+        if (!audioContextRef.current) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(highTone ? 960 : 720, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(highTone ? 720 : 960, ctx.currentTime + 0.35);
+
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.38);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.38);
+        highTone = !highTone;
+      };
+
+      playTone();
+      sirenIntervalRef.current = setInterval(playTone, 400);
+
+      // Trigger phone hardware vibration if supported
+      if ('vibrate' in navigator) {
+        navigator.vibrate([400, 200, 400, 200, 400]);
+      }
+    } catch (e) {
+      console.warn('Audio alarm unavailable:', e);
+    }
+  };
+
+  const stopSirenAlarm = () => {
+    setIsSirenActive(false);
+    if (sirenIntervalRef.current) {
+      clearInterval(sirenIntervalRef.current);
+      sirenIntervalRef.current = null;
+    }
+    if ('vibrate' in navigator) {
+      navigator.vibrate(0);
+    }
+  };
+
+  useEffect(() => {
+    return () => stopSirenAlarm();
+  }, []);
 
   // Poll for parent acknowledgment when alert is active
   React.useEffect(() => {
@@ -332,6 +400,30 @@ export default function SosButton({ size = 'large' }) {
                       {guardianAck?.accepted ? 'Responsibility Taken ✓' : guardianAck?.rejected ? 'Rejected / Unable' : 'Pending Response'}
                     </span>
                   </div>
+                </div>
+
+                {/* Emergency Phone Siren Alarm Option (For Unresponsive Parent) */}
+                <div className="mb-4">
+                  {!isSirenActive ? (
+                    <button
+                      onClick={startSirenAlarm}
+                      className="w-full py-3 px-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-sm animate-pulse"
+                    >
+                      <Siren className="w-4 h-4" />
+                      Sound Loud Alarm On Phone (Scare Threat & Alert Bystanders)
+                    </button>
+                  ) : (
+                    <button
+                      onClick={stopSirenAlarm}
+                      className="w-full py-3 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg ring-4 ring-red-300 animate-bounce"
+                    >
+                      <VolumeX className="w-4 h-4" />
+                      Stop Siren Alarm (Audio Playing...)
+                    </button>
+                  )}
+                  <p className="text-[10px] text-slate-400 text-center mt-1">
+                    Triggers a high-decibel distress wail & vibration if parent has not responded
+                  </p>
                 </div>
 
                 {/* Direct Telegram & Mobile Action Buttons */}
