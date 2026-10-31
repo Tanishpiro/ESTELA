@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   MapPin, Navigation, Share2, Compass, Layers, Shield, 
-  Search, Store, ShieldCheck, AlertCircle, ArrowRight, CheckCircle2, Clock 
+  Search, Store, ShieldCheck, AlertCircle, ArrowRight, CheckCircle2, Clock, ExternalLink 
 } from 'lucide-react';
 import { useSafety } from '../context/SafetyContext';
 import SafetyMap from '../components/SafetyMap';
@@ -254,6 +254,23 @@ export default function MapPage() {
                   ))}
                 </div>
               </div>
+              {/* One-Click Google Maps Turn-by-Turn Navigation Button */}
+              {currentRoute.googleMapsUrl && (
+                <div className="pt-2">
+                  <a
+                    href={currentRoute.googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3.5 px-4 rounded-2xl bg-[#0D3833] hover:bg-[#164E46] text-white font-black text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-sm text-center"
+                  >
+                    <span>Start Live Navigation in Google Maps</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                  <p className="text-[10px] text-slate-400 text-center mt-1.5">
+                    Locks in {currentRoute.name} with verified commercial waypoints on Google Maps
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             /* Prompt to select a destination */

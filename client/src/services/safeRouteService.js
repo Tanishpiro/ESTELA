@@ -123,6 +123,24 @@ export function computeSafeRoutes(origin, destination) {
     }
   ];
 
+  // Generate Google Maps Directions URL with waypoints to force the safe corridor
+  const createGoogleMapsRouteUrl = (start, end, waypoints, mode = 'walking') => {
+    const originStr = `${start.lat},${start.lon}`;
+    const destStr = `${end.lat},${end.lon}`;
+    
+    // Choose key commercial waypoints along the route (middle points)
+    const midWaypoints = waypoints.slice(1, -1);
+    const step = Math.max(1, Math.floor(midWaypoints.length / 3));
+    const selectedPoints = [];
+    for (let i = 0; i < midWaypoints.length; i += step) {
+      selectedPoints.push(`${midWaypoints[i][0].toFixed(5)},${midWaypoints[i][1].toFixed(5)}`);
+      if (selectedPoints.length >= 3) break;
+    }
+
+    const waypointsParam = selectedPoints.length > 0 ? `&waypoints=${selectedPoints.join('%7C')}` : '';
+    return `https://www.google.com/maps/dir/?api=1&origin=${originStr}&destination=${destStr}${waypointsParam}&travelmode=${mode}`;
+  };
+
   return [
     {
       id: 'route_safe',
@@ -136,6 +154,7 @@ export function computeSafeRoutes(origin, destination) {
       openUtilitiesCount: safeUtilities.length,
       utilities: safeUtilities,
       color: '#10B981', // Emerald green
+      googleMapsUrl: createGoogleMapsRouteUrl(origin, destination, safeWaypoints, 'walking'),
       highlights: [
         '96% Active Night Lighting',
         '4 Verified Open Shops & 24/7 Pharmacy',
@@ -155,6 +174,7 @@ export function computeSafeRoutes(origin, destination) {
       openUtilitiesCount: directUtilities.length,
       utilities: directUtilities,
       color: '#F59E0B', // Amber
+      googleMapsUrl: createGoogleMapsRouteUrl(origin, destination, directWaypoints, 'walking'),
       highlights: [
         'Saves ~3 mins walking time',
         'Only 1 shop (Closing Soon)',
