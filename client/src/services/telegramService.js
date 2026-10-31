@@ -10,7 +10,8 @@ export async function sendTelegramEmergencyAlert({
   accuracy,
   triggerSource = 'SOS Emergency Button',
   medicalInfo = '',
-  chatId = DEFAULT_CHAT_ID
+  chatId = DEFAULT_CHAT_ID,
+  alertTimestamp
 }) {
   const targetChatId = chatId || DEFAULT_CHAT_ID;
   const lat = latitude || 28.4788;
@@ -19,6 +20,7 @@ export async function sendTelegramEmergencyAlert({
   const now = new Date();
   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateStr = now.toLocaleDateString();
+  const alertId = alertTimestamp || Date.now();
 
   const messageText = 
 `🚨 *ESTELA EMERGENCY SOS ALERT!* 🚨
@@ -47,8 +49,8 @@ Please tap an option below to confirm whether you are taking immediate responsib
         reply_markup: {
           inline_keyboard: [
             [
-              { text: '✅ I Accept Responsibility', callback_data: `ack_accept_${Date.now()}` },
-              { text: '❌ Reject / Unable To Respond', callback_data: `ack_reject_${Date.now()}` }
+              { text: '✅ I Accept Responsibility', callback_data: `ack_accept_${alertId}` },
+              { text: '❌ Reject / Unable To Respond', callback_data: `ack_reject_${alertId}` }
             ]
           ]
         }
@@ -71,34 +73,30 @@ Please tap an option below to confirm whether you are taking immediate responsib
 }
 
 // Check and process guardian acknowledgment updates from Telegram
-export async function processGuardianAcknowledgment(incidentTimestamp = 0) {
+export async function processGuardianAcknowledgment(incidentTimestamp) {
+  if (!incidentTimestamp) return null;
+
   try {
-    // Fetch last 10 updates to always get fresh clicks without cache
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=-10`;
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates`;
     const res = await fetch(url);
     const data = await res.json();
     if (!data.ok || !Array.isArray(data.result) || data.result.length === 0) return null;
 
-    // Filter all callback queries
-    const callbacks = data.result.filter(u => u.callback_query);
-    if (callbacks.length === 0) return null;
+    // Filter callback queries matching THIS SPECIFIC alert's timestamp
+    const matchingCallbacks = data.result
+      .filter(u => u.callback_query && u.callback_query.data)
+      .filter(u => u.callback_query.data.includes(String(incidentTimestamp)));
 
-    // Get the latest callback query
-    const latestUpdate = callbacks[callbacks.length - 1];
-    const latest = latestUpdate.callback_query;
-    const isAccepted = latest.data && latest.data.includes('accept');
-    const isRejected = latest.data && (latest.data.includes('reject') || latest.data.includes('decline'));
-
-    // Extract timestamp from callback_data (e.g. ack_accept_1793425545477)
-    const match = latest.data ? latest.data.match(/_(\d{10,})$/) : null;
-    const actionTime = match ? parseInt(match[1], 10) : 0;
-
-    // If this click is older than the current incident trigger, ignore it so it stays fresh!
-    if (incidentTimestamp && actionTime && actionTime < (incidentTimestamp - 10000)) {
+    if (matchingCallbacks.length === 0) {
+      // No parent has clicked the button for THIS specific incident yet!
       return null;
     }
 
-    // Acknowledge the callback immediately on Telegram so spinner stops
+    const latest = matchingCallbacks[matchingCallbacks.length - 1].callback_query;
+    const isAccepted = latest.data.includes('accept');
+    const isRejected = latest.data.includes('reject');
+
+    // Answer callback query
     try {
       fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
         method: 'POST',
@@ -117,7 +115,6 @@ export async function processGuardianAcknowledgment(incidentTimestamp = 0) {
       from: latest.from,
       accepted: isAccepted,
       rejected: isRejected,
-      time: actionTime ? new Date(actionTime) : new Date(),
       timestamp: new Date().toISOString()
     };
   } catch (err) {

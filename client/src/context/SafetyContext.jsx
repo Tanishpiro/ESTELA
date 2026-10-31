@@ -243,11 +243,12 @@ export function SafetyProvider({ children }) {
   };
 
   // SOS Emergency Action (Guaranteed Zero-Crash Everywhere)
-  const triggerSOS = async () => {
+  const triggerSOS = async (alertTimestamp = null) => {
     const loc = await getCurrentLocation();
     const nowIso = new Date().toISOString();
     const incidentId = 'sos_' + Math.random().toString(36).substring(2, 9);
     const mapLink = `https://maps.google.com/?q=${loc?.latitude || 28.4788},${loc?.longitude || 76.9128}`;
+    const timestampToUse = alertTimestamp || Date.now();
 
     const notifiedList = contacts.map(c => ({
       id: c.id,
@@ -267,7 +268,8 @@ export function SafetyProvider({ children }) {
       latitude: loc?.latitude,
       longitude: loc?.longitude,
       addressApprox: `GPS: ${loc?.latitude?.toFixed(4)}, ${loc?.longitude?.toFixed(4)}`,
-      mapLink
+      mapLink,
+      alertTimestamp: timestampToUse
     };
 
     // 1. Try server dispatch if backend available
@@ -286,7 +288,6 @@ export function SafetyProvider({ children }) {
         const { data } = await parseSafeResponse(res);
         if (res.ok && data && data.incident) {
           setActiveIncident(data.incident);
-          return data;
         }
       } catch (e) {
         // Fall through to guaranteed local dispatch
@@ -296,7 +297,7 @@ export function SafetyProvider({ children }) {
     // 2. Reliable Instant Fallback (Guaranteed to work without crash)
     setActiveIncident(incidentData);
 
-    // 3. Automated Telegram Bot Alert Dispatch to @Esteella_bot
+    // 3. Automated Telegram Bot Alert Dispatch to @Esteella_bot with unique alertTimestamp
     sendTelegramEmergencyAlert({
       userName: user?.name || 'Alex Chen',
       phone: user?.phone || '',
@@ -304,7 +305,8 @@ export function SafetyProvider({ children }) {
       longitude: loc?.longitude,
       accuracy: loc?.accuracy,
       triggerSource: 'ESTELA SOS Emergency Button',
-      medicalInfo: user?.medical_info || ''
+      medicalInfo: user?.medical_info || '',
+      alertTimestamp: timestampToUse
     }).catch(err => console.warn('Telegram dispatch error:', err));
 
     return {

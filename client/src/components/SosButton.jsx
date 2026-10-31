@@ -35,8 +35,10 @@ export default function SosButton({ size = 'large' }) {
   const executeSos = async () => {
     try {
       setIsTriggering(true);
-      setIncidentCreatedAt(Date.now());
-      const res = await triggerSOS();
+      const nowTs = Date.now();
+      setIncidentCreatedAt(nowTs);
+      setGuardianAck(null);
+      const res = await triggerSOS(nowTs);
       setSosResult(res);
     } catch (err) {
       setErrorMsg(err.message || 'Failed to dispatch SOS alert');
@@ -84,13 +86,15 @@ export default function SosButton({ size = 'large' }) {
       setTelegramStatus('sending');
       const lat = latestLocation?.latitude || 28.4788;
       const lon = latestLocation?.longitude || 76.9128;
+      const nowTs = incidentCreatedAt || Date.now();
       const res = await sendTelegramEmergencyAlert({
         userName: user?.name || 'Alex Chen',
         phone: user?.phone || '',
         latitude: lat,
         longitude: lon,
         accuracy: latestLocation?.accuracy || 10,
-        triggerSource: 'User Triggered SOS'
+        triggerSource: 'User Triggered SOS',
+        alertTimestamp: nowTs
       });
       if (res.success) {
         setTelegramStatus('sent');
