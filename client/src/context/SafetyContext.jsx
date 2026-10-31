@@ -372,12 +372,14 @@ export function SafetyProvider({ children }) {
 
     // 3. Automated Telegram Bot Alert Dispatch to @Esteella_bot with unique alertTimestamp
     sendTelegramEmergencyAlert({
-      userName: user?.name || 'Alex Chen',
-      phone: user?.phone || '',
+      userName: user?.name || 'catty',
+      childName: 'catty',
+      parentName: 'Tanish',
+      phone: '+91 9306617122',
       latitude: loc?.latitude,
       longitude: loc?.longitude,
       accuracy: loc?.accuracy,
-      triggerSource: 'ESTELA SOS Emergency Button',
+      triggerSource: 'Child SOS Emergency Trigger (catty)',
       medicalInfo: user?.medical_info || '',
       alertTimestamp: timestampToUse
     }).catch(err => console.warn('Telegram dispatch error:', err));
@@ -521,7 +523,8 @@ export function SafetyProvider({ children }) {
     // Send Reassuring Safe Confirmation Message to Telegram Parent Bot
     const loc = latestLocation;
     sendTelegramSafeConfirmation({
-      userName: user?.name || 'Alex Chen',
+      childName: 'catty',
+      parentName: 'Tanish',
       latitude: loc?.latitude,
       longitude: loc?.longitude
     }).catch(err => console.warn('Safe confirmation notification notice:', err));

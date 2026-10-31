@@ -378,14 +378,14 @@ export default function SosButton({ size = 'large' }) {
                       </div>
                       <div>
                         <p className="text-xs font-bold text-slate-900">
-                          Parent Responsibility Status
+                          Parent Responsibility Status (Tanish)
                         </p>
                         <p className="text-[11px] text-slate-500 mt-0.5">
                           {guardianAck?.accepted 
-                            ? `Accepted by ${guardianAck.from?.first_name || 'Parent'} on Telegram`
+                            ? `Accepted by Tanish for child catty via Telegram`
                             : guardianAck?.rejected
-                            ? `Declined / Unable to respond (${guardianAck.from?.first_name || 'Parent'})`
-                            : 'Waiting for parent confirmation on Telegram...'}
+                            ? `Declined / Unable to respond (Tanish)`
+                            : 'Waiting for parent Tanish to confirm on Telegram...'}
                         </p>
                       </div>
                     </div>

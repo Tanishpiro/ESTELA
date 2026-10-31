@@ -1,11 +1,13 @@
-// Telegram Emergency Alert Dispatch Service
+// Telegram Emergency Alert Dispatch Service for Child (Catty) & Guardian (Tanish)
 const TELEGRAM_BOT_TOKEN = '9016665127:AAE1kRi0zpATonPJ91j26Ub5_pP3WGX75oA';
 const DEFAULT_CHAT_ID = '8971040800';
 export const SINGLE_PRIMARY_NUMBER = '+91 9306617122';
 
 export async function sendTelegramEmergencyAlert({
-  userName = 'Alex Chen',
-  phone = '',
+  userName = 'catty',
+  childName = 'catty',
+  parentName = 'Tanish',
+  phone = SINGLE_PRIMARY_NUMBER,
   latitude,
   longitude,
   accuracy,
@@ -24,18 +26,19 @@ export async function sendTelegramEmergencyAlert({
   const alertId = alertTimestamp || Date.now();
 
   const messageText = 
-`🚨 *ESTELA EMERGENCY SOS ALERT!* 🚨
+`🚨 *ESTELA EMERGENCY CHILD ALERT!* 🚨
 ━━━━━━━━━━━━━━━━━━━━
-👤 *User:* ${userName}
-📱 *Emergency Contact:* ${SINGLE_PRIMARY_NUMBER}
-📍 *Live Location:* [View on Google Maps](${mapUrl})
+👧 *Child:* ${childName || userName || 'catty'}
+👨‍👧 *Parent / Guardian:* ${parentName || 'Tanish'}
+📱 *Guardian Phone:* ${SINGLE_PRIMARY_NUMBER}
+📍 *Child's Live Location:* [View on Google Maps](${mapUrl})
 🌐 *Coordinates:* \`${lat.toFixed(5)}, ${lon.toFixed(5)}\`
 🎯 *GPS Accuracy:* ±${Math.round(accuracy || 10)}m
 ⚡ *Trigger Source:* ${triggerSource}
 ⏰ *Time:* ${timeStr} (${dateStr})
 ${medicalInfo ? `🩺 *Medical Info:* ${medicalInfo}\n` : ''}━━━━━━━━━━━━━━━━━━━━
-🛡️ *GUARDIAN RESPONSIBILITY ACTION REQUIRED:*
-Please tap an option below to confirm whether you are taking immediate responsibility for this emergency alert.`;
+🛡️ *PARENT RESPONSIBILITY ACTION REQUIRED:*
+Tanish, your child catty has triggered an emergency SOS alert! Please tap below to confirm responsibility.`;
 
   try {
     const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -75,7 +78,8 @@ Please tap an option below to confirm whether you are taking immediate responsib
 
 // Dispatches a reassuring "I AM SAFE NOW" confirmation message directly to the parent
 export async function sendTelegramSafeConfirmation({
-  userName = 'Alex Chen',
+  childName = 'catty',
+  parentName = 'Tanish',
   latitude,
   longitude,
   chatId = DEFAULT_CHAT_ID
@@ -89,15 +93,16 @@ export async function sendTelegramSafeConfirmation({
   const dateStr = now.toLocaleDateString();
 
   const safeMessage = 
-`✅ *ESTELA SAFETY UPDATE: I AM SAFE NOW!* ✅
+`✅ *ESTELA SAFETY UPDATE: CATTY IS SAFE NOW!* ✅
 ━━━━━━━━━━━━━━━━━━━━
-👤 *User:* ${userName}
-📱 *Target Contact:* ${SINGLE_PRIMARY_NUMBER}
+👧 *Child:* ${childName || 'catty'}
+👨‍👧 *Parent / Guardian:* ${parentName || 'Tanish'}
+📱 *Guardian Contact:* ${SINGLE_PRIMARY_NUMBER}
 🟢 *Status:* False alarm / Emergency safely resolved
 ⏰ *Resolved At:* ${timeStr} (${dateStr})
 📍 *Current Location:* [View on Google Maps](${mapUrl})
 ━━━━━━━━━━━━━━━━━━━━
-🙏 *Parent Notice:* The emergency alert has been officially called off. The user has confirmed they are completely safe and secure!`;
+🙏 *Parent Notice (Tanish):* Your child catty has confirmed she is safe and secure. The emergency alert has been officially called off!`;
 
   try {
     const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -156,8 +161,8 @@ export async function processGuardianAcknowledgment(incidentTimestamp) {
         body: JSON.stringify({
           callback_query_id: matchedCallback.id,
           text: isAccepted 
-            ? '✅ Responsibility accepted! ESTELA screen updated.' 
-            : '⚠️ Marked unable/rejected. ESTELA screen updated.'
+            ? '✅ Tanish, you accepted responsibility for catty!' 
+            : '⚠️ Tanish marked unable to respond for catty.'
         })
       }).catch(() => {});
     } catch (e) {}
