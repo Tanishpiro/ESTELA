@@ -28,6 +28,7 @@ export default function SosButton({ size = 'large' }) {
   }, [showConfirmModal, countdown]);
 
   const handleOpenSos = () => {
+    emergencyAlarm.unlock(); // Ensure Web Audio context is unlocked on click
     setErrorMsg(null);
     setSosResult(null);
     setGuardianAck(null);

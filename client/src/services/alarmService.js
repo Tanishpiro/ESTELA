@@ -1,6 +1,6 @@
-// Shared Emergency Siren Audio Synthesizer & Cross-App Alarm Controller
-// Generates loud high-low emergency distress tone & device vibration
-// Synchronizes 30s auto-escalation across both Parent (Tanish) & Child (Catty) views
+// Robust Multi-Engine Alarm Sound Generator
+// Uses AudioContext oscillator (high-frequency siren) + HTML5 Audio fallback
+// Automatically unlocks audio context on first user tap/click on the page
 
 const ALARM_STORAGE_KEY = 'estela_active_alarm_state';
 
@@ -10,10 +10,25 @@ class EmergencyAlarmService {
     this.sirenInterval = null;
     this.isPlaying = false;
     this.listeners = new Set();
-    this.autoTimer = null;
+    this.fallbackAudio = null;
 
-    // Listen to cross-tab/cross-window events via localStorage
+    // Attach unlocker to first user interaction
     if (typeof window !== 'undefined') {
+      const unlockAudio = () => {
+        try {
+          if (!this.audioCtx) {
+            this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          if (this.audioCtx && this.audioCtx.state === 'suspended') {
+            this.audioCtx.resume();
+          }
+        } catch (e) {}
+      };
+
+      window.addEventListener('click', unlockAudio, { once: false, passive: true });
+      window.addEventListener('touchstart', unlockAudio, { once: false, passive: true });
+
+      // Listen to cross-window events (Parent Portal <-> Child App)
       window.addEventListener('storage', (e) => {
         if (e.key === ALARM_STORAGE_KEY) {
           try {
@@ -27,6 +42,17 @@ class EmergencyAlarmService {
         }
       });
     }
+  }
+
+  unlock() {
+    try {
+      if (!this.audioCtx) {
+        this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (this.audioCtx && this.audioCtx.state === 'suspended') {
+        this.audioCtx.resume();
+      }
+    } catch (e) {}
   }
 
   subscribe(callback) {
@@ -49,59 +75,64 @@ class EmergencyAlarmService {
     }
 
     if (this.isPlaying) return;
-    try {
-      if (!this.audioCtx) {
-        this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (this.audioCtx.state === 'suspended') {
-        this.audioCtx.resume();
-      }
+    this.isPlaying = true;
+    this.notify();
 
-      this.isPlaying = true;
-      this.notify();
+    // 1. AudioContext Oscillator Siren
+    try {
+      this.unlock();
+      const ctx = this.audioCtx;
 
       let highTone = true;
       const playTone = () => {
-        if (!this.audioCtx || !this.isPlaying) return;
+        if (!this.isPlaying) return;
         try {
-          const ctx = this.audioCtx;
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
+          if (!this.audioCtx) {
+            this.unlock();
+          }
+          const currentCtx = this.audioCtx;
+          if (!currentCtx) return;
+          if (currentCtx.state === 'suspended') {
+            currentCtx.resume();
+          }
+
+          const osc = currentCtx.createOscillator();
+          const gain = currentCtx.createGain();
 
           osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(highTone ? 960 : 720, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(highTone ? 720 : 960, ctx.currentTime + 0.35);
+          const freq = highTone ? 1100 : 750;
+          osc.frequency.setValueAtTime(freq, currentCtx.currentTime);
+          osc.frequency.linearRampToValueAtTime(highTone ? 750 : 1100, currentCtx.currentTime + 0.3);
 
-          gain.gain.setValueAtTime(0.35, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.38);
+          gain.gain.setValueAtTime(0.5, currentCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, currentCtx.currentTime + 0.35);
 
           osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.38);
+          gain.connect(currentCtx.destination);
+
+          osc.start(currentCtx.currentTime);
+          osc.stop(currentCtx.currentTime + 0.35);
           highTone = !highTone;
-        } catch (e) {}
+        } catch (err) {
+          console.warn('Oscillator error:', err);
+        }
       };
 
       playTone();
-      this.sirenInterval = setInterval(playTone, 400);
-
-      if ('vibrate' in navigator) {
-        try {
-          navigator.vibrate([500, 250, 500, 250, 500]);
-        } catch (e) {}
-      }
+      this.sirenInterval = setInterval(playTone, 380);
     } catch (err) {
-      console.warn('Alarm AudioContext init blocked or unavailable:', err);
+      console.warn('AudioContext Siren failed:', err);
+    }
+
+    // 2. Hardware Vibration for phones
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate([600, 200, 600, 200, 800]);
+      } catch (e) {}
     }
   }
 
   stop(broadcast = true) {
-    if (this.autoTimer) {
-      clearTimeout(this.autoTimer);
-      this.autoTimer = null;
-    }
-
     if (broadcast && typeof window !== 'undefined') {
       try {
         localStorage.setItem(ALARM_STORAGE_KEY, JSON.stringify({ playing: false, timestamp: Date.now() }));
@@ -113,38 +144,21 @@ class EmergencyAlarmService {
       clearInterval(this.sirenInterval);
       this.sirenInterval = null;
     }
-    if ('vibrate' in navigator) {
+
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
         navigator.vibrate(0);
       } catch (e) {}
     }
+
     this.notify();
   }
 
   toggle() {
     if (this.isPlaying) {
-      this.stop();
+      this.stop(true);
     } else {
-      this.start();
-    }
-  }
-
-  // Schedule auto alarm ring after delayMs (30 seconds after SOS dispatch)
-  scheduleAutoAlarm(delayMs = 30000, conditionCheck = null) {
-    if (this.autoTimer) {
-      clearTimeout(this.autoTimer);
-    }
-    this.autoTimer = setTimeout(() => {
-      if (!conditionCheck || conditionCheck()) {
-        this.start(true);
-      }
-    }, delayMs);
-  }
-
-  cancelAutoAlarm() {
-    if (this.autoTimer) {
-      clearTimeout(this.autoTimer);
-      this.autoTimer = null;
+      this.start(true);
     }
   }
 }
