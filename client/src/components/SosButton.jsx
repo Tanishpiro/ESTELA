@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { AlertTriangle, X, ShieldAlert, CheckCircle2, Phone, BellRing, MessageSquare, Send } from 'lucide-react';
+import { AlertTriangle, X, ShieldAlert, CheckCircle2, Phone, BellRing, MessageSquare, Send, Check } from 'lucide-react';
 import { useSafety } from '../context/SafetyContext';
 import { useAuth } from '../context/AuthContext';
+import { sendTelegramEmergencyAlert } from '../services/telegramService';
 
 export default function SosButton({ size = 'large' }) {
   const { triggerSOS, activeIncident, resolveIncident, contacts, latestLocation } = useSafety();
@@ -53,6 +54,31 @@ export default function SosButton({ size = 'large' }) {
     }
     setShowConfirmModal(false);
     setSosResult(null);
+  };
+
+  const [telegramStatus, setTelegramStatus] = useState(null);
+
+  const handleSendTelegram = async () => {
+    try {
+      setTelegramStatus('sending');
+      const lat = latestLocation?.latitude || 28.4788;
+      const lon = latestLocation?.longitude || 76.9128;
+      const res = await sendTelegramEmergencyAlert({
+        userName: user?.name || 'Alex Chen',
+        phone: user?.phone || '',
+        latitude: lat,
+        longitude: lon,
+        accuracy: latestLocation?.accuracy || 10,
+        triggerSource: 'User Triggered SOS'
+      });
+      if (res.success) {
+        setTelegramStatus('sent');
+      } else {
+        setTelegramStatus('error');
+      }
+    } catch {
+      setTelegramStatus('error');
+    }
   };
 
   // Helper to open real phone SMS app pre-filled with location link & primary phone number
@@ -222,25 +248,30 @@ export default function SosButton({ size = 'large' }) {
                 <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 mb-4">
                   <h4 className="font-bold text-emerald-900 text-sm flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    SMS & Emergency Alerts Dispatched
+                    Emergency Broadcast Dispatched
                   </h4>
                   <p className="text-xs text-emerald-700 mt-1">
-                    An SMS text message with your live Google Maps location has been automatically dispatched to your primary contact!
+                    Emergency notification with live GPS coordinates has been transmitted to your Telegram guardian bot (@Esteella_bot).
                   </p>
                 </div>
 
-                {/* Direct Real Phone SMS Action Button */}
-                <div className="mb-4">
+                {/* Direct Telegram & Mobile Action Buttons */}
+                <div className="space-y-2 mb-4">
+                  <button
+                    onClick={handleSendTelegram}
+                    className="w-full py-3.5 px-4 rounded-2xl bg-[#0088cc] hover:bg-[#0077b5] text-white font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <Send className="w-4 h-4" />
+                    {telegramStatus === 'sending' ? 'Broadcasting to Telegram...' : telegramStatus === 'sent' ? '✓ Re-Sent to Telegram (@Esteella_bot)' : 'Re-send Alert to Telegram'}
+                  </button>
+
                   <button
                     onClick={handleOpenNativeSms}
-                    className="w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-sm"
+                    className="w-full py-3 px-4 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-2"
                   >
-                    <MessageSquare className="w-4 h-4" />
+                    <MessageSquare className="w-4 h-4 text-slate-500" />
                     Open Native Messages App (Direct SMS)
                   </button>
-                  <p className="text-[11px] text-slate-400 text-center mt-1.5">
-                    Pre-fills your primary contact's number & Google Maps coordinates in SMS
-                  </p>
                 </div>
 
                 <div className="space-y-2 mb-4 max-h-40 overflow-y-auto">

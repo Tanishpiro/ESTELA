@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import { sendTelegramEmergencyAlert } from '../services/telegramService';
 
 const SafetyContext = createContext(null);
 
@@ -294,6 +295,18 @@ export function SafetyProvider({ children }) {
 
     // 2. Reliable Instant Fallback (Guaranteed to work without crash)
     setActiveIncident(incidentData);
+
+    // 3. Automated Telegram Bot Alert Dispatch to @Esteella_bot
+    sendTelegramEmergencyAlert({
+      userName: user?.name || 'Alex Chen',
+      phone: user?.phone || '',
+      latitude: loc?.latitude,
+      longitude: loc?.longitude,
+      accuracy: loc?.accuracy,
+      triggerSource: 'ESTELA SOS Emergency Button',
+      medicalInfo: user?.medical_info || ''
+    }).catch(err => console.warn('Telegram dispatch error:', err));
+
     return {
       success: true,
       incident: incidentData,
