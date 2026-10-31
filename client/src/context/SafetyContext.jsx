@@ -346,6 +346,20 @@ export function SafetyProvider({ children }) {
     };
 
     // 1. Try server dispatch if backend available
+    try {
+      fetch('/api/incidents/sos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'TRIGGER',
+          latitude: loc?.latitude,
+          longitude: loc?.longitude,
+          accuracy: loc?.accuracy,
+          trigger_source: 'SOS_BUTTON'
+        })
+      }).catch(() => {});
+    } catch (e) {}
+
     if (token) {
       try {
         const res = await fetch('/api/incidents/sos', {

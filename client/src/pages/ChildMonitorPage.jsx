@@ -69,9 +69,38 @@ export default function ChildMonitorPage() {
     checkStorageEvent();
     window.addEventListener('storage', checkStorageEvent);
 
+    // Server-side cross-device polling: polls `/api/incidents/sos` every 2.5s
+    // Ensures parent phone receives alert even if on a completely different phone / network!
+    const pollServerSos = async () => {
+      try {
+        const res = await fetch('/api/incidents/sos');
+        const data = await res.json();
+        if (data?.active && data?.incident) {
+          const inc = data.incident;
+          setChildStatus('SOS_TRIGGERED');
+          setIncomingSos(inc);
+          const elapsed = Math.floor((Date.now() - inc.timestamp) / 1000);
+          const remaining = Math.max(0, 30 - elapsed);
+          setParentCountdown((prev) => (prev === null ? remaining : prev));
+          if (remaining === 0) {
+            emergencyAlarm.start(false);
+          }
+        } else if (!data?.active && childStatus === 'SOS_TRIGGERED') {
+          setChildStatus('SAFE');
+          setIncomingSos(null);
+          setParentCountdown(null);
+          emergencyAlarm.stop(false);
+        }
+      } catch (err) {}
+    };
+
+    pollServerSos();
+    const serverPollInterval = setInterval(pollServerSos, 2500);
+
     return () => {
       unsubRelay();
       window.removeEventListener('storage', checkStorageEvent);
+      clearInterval(serverPollInterval);
     };
   }, []);
 
