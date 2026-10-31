@@ -4,7 +4,7 @@ import { useSafety } from '../context/SafetyContext';
 import { useAuth } from '../context/AuthContext';
 
 export default function ContactsPage() {
-  const { contacts, refreshSafetyState } = useSafety();
+  const { contacts, refreshSafetyState, saveContact, removeContact } = useSafety();
   const { token } = useAuth();
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -60,35 +60,11 @@ export default function ContactsPage() {
     setError(null);
 
     try {
-      const url = editingContact ? `/api/contacts/${editingContact.id}` : '/api/contacts';
-      const method = editingContact ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
-
-      let data = {};
-      try {
-        const text = await res.text();
-        if (text && text.trim()) {
-          data = JSON.parse(text);
-        }
-      } catch (e) {
-        data = {};
-      }
-
-      if (!res.ok) throw new Error(data.error || 'Failed to save contact');
-
-      await refreshSafetyState();
+      await saveContact(formData, editingContact?.id);
       setShowAddModal(false);
       resetForm();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to save contact');
     } finally {
       setLoading(false);
     }
@@ -97,11 +73,7 @@ export default function ContactsPage() {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to remove this trusted contact?')) return;
     try {
-      await fetch(`/api/contacts/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      await refreshSafetyState();
+      await removeContact(id);
     } catch (err) {
       console.error(err);
     }

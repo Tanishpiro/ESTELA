@@ -380,6 +380,62 @@ export function SafetyProvider({ children }) {
     }
   };
 
+  // Save Contact (Both Local Vault & Server Sync)
+  const saveContact = async (contactData, editingId = null) => {
+    let updatedList = [];
+    if (editingId) {
+      updatedList = contacts.map(c => c.id === editingId ? { ...c, ...contactData, id: editingId } : c);
+    } else {
+      const newContact = {
+        ...contactData,
+        id: 'ctc_' + Math.random().toString(36).substring(2, 9),
+        created_at: new Date().toISOString()
+      };
+      // If marked as primary, demote any other primary
+      if (contactData.role === 'primary') {
+        updatedList = contacts.map(c => ({ ...c, role: c.role === 'primary' ? 'general' : c.role }));
+        updatedList.push(newContact);
+      } else {
+        updatedList = [...contacts, newContact];
+      }
+    }
+
+    setContacts(updatedList);
+    try {
+      localStorage.setItem(STORAGE_CONTACTS, JSON.stringify(updatedList));
+    } catch (e) {}
+
+    // Background sync with server if available
+    if (token) {
+      const url = editingId ? `/api/contacts/${editingId}` : '/api/contacts';
+      const method = editingId ? 'PUT' : 'POST';
+      fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(contactData)
+      }).catch(() => {});
+    }
+
+    return { success: true, contacts: updatedList };
+  };
+
+  // Delete Contact (Both Local Vault & Server Sync)
+  const removeContact = async (id) => {
+    const updated = contacts.filter(c => c.id !== id);
+    setContacts(updated);
+    try {
+      localStorage.setItem(STORAGE_CONTACTS, JSON.stringify(updated));
+    } catch (e) {}
+
+    if (token) {
+      fetch(`/api/contacts/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      }).catch(() => {});
+    }
+    return { success: true, contacts: updated };
+  };
+
   // Resolve Active Incident
   const resolveIncident = async (incidentId, note = 'Resolved safely') => {
     setActiveIncident(null);
@@ -412,6 +468,8 @@ export function SafetyProvider({ children }) {
         confirmSafe,
         startSession,
         endSession,
+        saveContact,
+        removeContact,
         resolveIncident,
         toggleAiMonitoring,
         handleDistressTrigger,
