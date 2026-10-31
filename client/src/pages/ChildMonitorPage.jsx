@@ -218,14 +218,14 @@ export default function ChildMonitorPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-amber-900 font-extrabold text-xs">
                     <Siren className="w-4 h-4 text-amber-600" />
-                    <span>Unresponsive Child SOS Alarm</span>
+                    <span>Child SOS Emergency Siren</span>
                   </div>
                   <span className="text-[10px] bg-amber-200/80 text-amber-900 font-black px-2 py-0.5 rounded-full uppercase">
-                    Parent App Alert
+                    Auto-Rings in 30s
                   </span>
                 </div>
                 <p className="text-[11px] text-amber-800 leading-relaxed">
-                  If Catty triggered SOS or missed check-in and no guardian confirmed on Telegram, trigger high-decibel siren on this parent phone.
+                  When Catty dispatches an SOS, an automatic 30-second timer initiates. If no guardian acknowledges in Telegram, this loud oscillating siren rings automatically on both parent and child phones.
                 </p>
                 <button
                   onClick={toggleParentAlarm}

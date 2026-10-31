@@ -74,6 +74,7 @@ export default function SosButton({ size = 'large' }) {
   const [guardianAck, setGuardianAck] = useState(null);
   const [incidentCreatedAt, setIncidentCreatedAt] = useState(null);
   const [isSirenActive, setIsSirenActive] = useState(false);
+  const [autoAlarmCountdown, setAutoAlarmCountdown] = useState(null);
 
   // Subscribe to shared alarm service
   useEffect(() => {
@@ -95,6 +96,34 @@ export default function SosButton({ size = 'large' }) {
     return () => stopSirenAlarm();
   }, []);
 
+  // 30-Second Automatic Alarm Timer after SOS message dispatched
+  useEffect(() => {
+    let countdownInterval;
+    if (sosResult && !guardianAck?.accepted && !isSirenActive) {
+      setAutoAlarmCountdown(30);
+      countdownInterval = setInterval(() => {
+        setAutoAlarmCountdown((prev) => {
+          if (prev === null) return 30;
+          if (prev <= 1) {
+            clearInterval(countdownInterval);
+            // 30 seconds elapsed and no response from parent -> Ring alarm across child and parent
+            emergencyAlarm.start(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else if (guardianAck?.accepted || isSirenActive) {
+      setAutoAlarmCountdown(null);
+      if (guardianAck?.accepted) {
+        emergencyAlarm.stop(true);
+      }
+    }
+    return () => {
+      if (countdownInterval) clearInterval(countdownInterval);
+    };
+  }, [sosResult, guardianAck?.accepted, isSirenActive]);
+
   // Poll for parent acknowledgment when alert is active
   React.useEffect(() => {
     let pollInterval;
@@ -103,6 +132,9 @@ export default function SosButton({ size = 'large' }) {
         const ack = await processGuardianAcknowledgment(incidentCreatedAt);
         if (ack) {
           setGuardianAck(ack);
+          if (ack.accepted) {
+            emergencyAlarm.stop(true);
+          }
         }
       };
       checkAck();
@@ -361,15 +393,27 @@ export default function SosButton({ size = 'large' }) {
                   </div>
                 </div>
 
-                {/* Emergency Phone Siren Alarm Option (For Unresponsive Parent) */}
+                {/* Emergency Phone Siren Alarm Option (With 30s Auto Escalation) */}
                 <div className="mb-4">
+                  {autoAlarmCountdown !== null && autoAlarmCountdown > 0 && !isSirenActive && (
+                    <div className="mb-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between text-xs animate-pulse">
+                      <div className="flex items-center gap-2 text-amber-900 font-bold">
+                        <Clock className="w-4 h-4 text-amber-600" />
+                        <span>Auto-Escalation to Loud Alarm:</span>
+                      </div>
+                      <span className="font-black px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 font-mono">
+                        {autoAlarmCountdown}s
+                      </span>
+                    </div>
+                  )}
+
                   {!isSirenActive ? (
                     <button
                       onClick={startSirenAlarm}
                       className="w-full py-3 px-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-sm animate-pulse"
                     >
                       <Siren className="w-4 h-4" />
-                      Sound Loud Alarm On Phone (Scare Threat & Alert Bystanders)
+                      Sound Loud Alarm Now (Rings Child & Parent App)
                     </button>
                   ) : (
                     <button
@@ -377,11 +421,11 @@ export default function SosButton({ size = 'large' }) {
                       className="w-full py-3 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg ring-4 ring-red-300 animate-bounce"
                     >
                       <VolumeX className="w-4 h-4" />
-                      Stop Siren Alarm (Audio Playing...)
+                      Stop Siren Alarm (Audio Playing On Both Apps...)
                     </button>
                   )}
                   <p className="text-[10px] text-slate-400 text-center mt-1">
-                    Triggers a high-decibel distress wail & vibration if parent has not responded
+                    Automatically triggers on both phones in 30 seconds if parent hasn't confirmed
                   </p>
                 </div>
 

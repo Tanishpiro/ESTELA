@@ -1,5 +1,8 @@
-// Shared Emergency Siren Audio Synthesizer & Sound Controller
+// Shared Emergency Siren Audio Synthesizer & Cross-App Alarm Controller
 // Generates loud high-low emergency distress tone & device vibration
+// Synchronizes 30s auto-escalation across both Parent (Tanish) & Child (Catty) views
+
+const ALARM_STORAGE_KEY = 'estela_active_alarm_state';
 
 class EmergencyAlarmService {
   constructor() {
@@ -7,6 +10,23 @@ class EmergencyAlarmService {
     this.sirenInterval = null;
     this.isPlaying = false;
     this.listeners = new Set();
+    this.autoTimer = null;
+
+    // Listen to cross-tab/cross-window events via localStorage
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (e) => {
+        if (e.key === ALARM_STORAGE_KEY) {
+          try {
+            const data = e.newValue ? JSON.parse(e.newValue) : null;
+            if (data?.playing) {
+              this.start(false);
+            } else {
+              this.stop(false);
+            }
+          } catch (err) {}
+        }
+      });
+    }
   }
 
   subscribe(callback) {
@@ -21,7 +41,13 @@ class EmergencyAlarmService {
     });
   }
 
-  start() {
+  start(broadcast = true) {
+    if (broadcast && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(ALARM_STORAGE_KEY, JSON.stringify({ playing: true, timestamp: Date.now() }));
+      } catch (e) {}
+    }
+
     if (this.isPlaying) return;
     try {
       if (!this.audioCtx) {
@@ -70,7 +96,18 @@ class EmergencyAlarmService {
     }
   }
 
-  stop() {
+  stop(broadcast = true) {
+    if (this.autoTimer) {
+      clearTimeout(this.autoTimer);
+      this.autoTimer = null;
+    }
+
+    if (broadcast && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(ALARM_STORAGE_KEY, JSON.stringify({ playing: false, timestamp: Date.now() }));
+      } catch (e) {}
+    }
+
     this.isPlaying = false;
     if (this.sirenInterval) {
       clearInterval(this.sirenInterval);
@@ -89,6 +126,25 @@ class EmergencyAlarmService {
       this.stop();
     } else {
       this.start();
+    }
+  }
+
+  // Schedule auto alarm ring after delayMs (30 seconds after SOS dispatch)
+  scheduleAutoAlarm(delayMs = 30000, conditionCheck = null) {
+    if (this.autoTimer) {
+      clearTimeout(this.autoTimer);
+    }
+    this.autoTimer = setTimeout(() => {
+      if (!conditionCheck || conditionCheck()) {
+        this.start(true);
+      }
+    }, delayMs);
+  }
+
+  cancelAutoAlarm() {
+    if (this.autoTimer) {
+      clearTimeout(this.autoTimer);
+      this.autoTimer = null;
     }
   }
 }
