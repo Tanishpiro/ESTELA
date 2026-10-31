@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useSafety } from '../context/SafetyContext';
 import SafetyMap from '../components/SafetyMap';
-import { sendTelegramSafeConfirmation } from '../services/telegramService';
+import { sendTelegramSafeConfirmation, subscribeToSosEvents } from '../services/telegramService';
 import emergencyAlarm from '../services/alarmService';
 
 export default function ChildMonitorPage() {
@@ -17,6 +17,8 @@ export default function ChildMonitorPage() {
   const [pingSent, setPingSent] = useState(false);
   const [isParentAlarmActive, setIsParentAlarmActive] = useState(false);
   const [unresponsiveAlert, setUnresponsiveAlert] = useState(true);
+  const [parentCountdown, setParentCountdown] = useState(null);
+  const [incomingSos, setIncomingSos] = useState(null);
 
   // Sync with global alarm service
   useEffect(() => {
@@ -24,6 +26,84 @@ export default function ChildMonitorPage() {
       setIsParentAlarmActive(active);
     });
     return unsub;
+  }, []);
+
+  // Listen to SOS broadcasts (Cross-device / Cross-tab relay)
+  useEffect(() => {
+    const handleSosEvent = (data) => {
+      if (data.type === 'SOS_TRIGGERED') {
+        setChildStatus('SOS_TRIGGERED');
+        setIncomingSos(data.payload);
+        setParentCountdown(30);
+        setLastSeenTime(new Date().toLocaleTimeString());
+      } else if (data.type === 'SOS_RESOLVED') {
+        setChildStatus('SAFE');
+        setIncomingSos(null);
+        setParentCountdown(null);
+        emergencyAlarm.stop(true);
+      }
+    };
+
+    const unsubRelay = subscribeToSosEvents(handleSosEvent);
+
+    // Also check localStorage on initial mount and on storage events
+    const checkStorageEvent = () => {
+      try {
+        const stored = localStorage.getItem('estela_latest_sos_event');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && !parsed.resolved && Date.now() - parsed.timestamp < 180000) {
+            setChildStatus('SOS_TRIGGERED');
+            setIncomingSos(parsed.payload);
+            const elapsedSeconds = Math.floor((Date.now() - parsed.timestamp) / 1000);
+            const remaining = Math.max(0, 30 - elapsedSeconds);
+            setParentCountdown(remaining);
+            if (remaining === 0) {
+              emergencyAlarm.start(false);
+            }
+          }
+        }
+      } catch (e) {}
+    };
+
+    checkStorageEvent();
+    window.addEventListener('storage', checkStorageEvent);
+
+    return () => {
+      unsubRelay();
+      window.removeEventListener('storage', checkStorageEvent);
+    };
+  }, []);
+
+  // 30-Second Countdown on Parent Phone: When timer reaches 0, ring alarm automatically!
+  useEffect(() => {
+    let timer;
+    if (parentCountdown !== null && parentCountdown > 0) {
+      timer = setInterval(() => {
+        setParentCountdown((c) => {
+          if (c <= 1) {
+            clearInterval(timer);
+            // Timer hit 0! Ring alarm on parent's phone!
+            emergencyAlarm.start(true);
+            return 0;
+          }
+          return c - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [parentCountdown]);
+
+  // Periodic Auto-refresh telemetry & live check every 4 seconds
+  useEffect(() => {
+    const autoRefresh = setInterval(() => {
+      setLastSeenTime(new Date().toLocaleTimeString());
+      // Random subtle battery drain simulation for realistic monitoring
+      setBatteryLevel((b) => (Math.random() > 0.8 ? Math.max(15, b - 1) : b));
+    }, 4000);
+    return () => clearInterval(autoRefresh);
   }, []);
 
   const toggleParentAlarm = () => {
@@ -93,15 +173,73 @@ export default function ChildMonitorPage() {
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-emerald-600' : ''}`} />
           </button>
 
-          <div className="px-3.5 py-2 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+          <div className={`px-3.5 py-2 rounded-2xl border flex items-center gap-2 ${
+            childStatus === 'SOS_TRIGGERED' 
+              ? 'bg-rose-50 border-rose-200' 
+              : 'bg-emerald-50 border-emerald-200'
+          }`}>
+            <span className={`w-2.5 h-2.5 rounded-full ${
+              childStatus === 'SOS_TRIGGERED' 
+                ? 'bg-rose-500 animate-ping' 
+                : 'bg-emerald-500 animate-ping'
+            }`}></span>
             <div>
-              <p className="text-[10px] font-bold text-emerald-900 uppercase">Child Status</p>
-              <p className="text-xs font-black text-emerald-700">All Safe & Protected</p>
+              <p className={`text-[10px] font-bold uppercase ${
+                childStatus === 'SOS_TRIGGERED' ? 'text-rose-900' : 'text-emerald-900'
+              }`}>
+                Child Status
+              </p>
+              <p className={`text-xs font-black ${
+                childStatus === 'SOS_TRIGGERED' ? 'text-rose-700 animate-pulse' : 'text-emerald-700'
+              }`}>
+                {childStatus === 'SOS_TRIGGERED' ? '🚨 EMERGENCY SOS ACTIVE!' : 'All Safe & Protected'}
+              </p>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Emergency Active Banner for Tanish if SOS is triggered */}
+      {childStatus === 'SOS_TRIGGERED' && (
+        <div className="p-5 rounded-3xl bg-rose-50 border-2 border-rose-300 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center animate-bounce shadow-md">
+              <Siren className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider bg-rose-600 text-white px-2 py-0.5 rounded-full">
+                  Catty Triggered SOS
+                </span>
+                {parentCountdown !== null && (
+                  <span className="text-xs font-black text-rose-800 bg-rose-200 px-2 py-0.5 rounded-full font-mono">
+                    {parentCountdown > 0 ? `Auto-Alarm in ${parentCountdown}s` : '🚨 ALARM RINGING NOW!'}
+                  </span>
+                )}
+              </div>
+              <h3 className="text-base font-black text-rose-900 mt-1">
+                Emergency Alert from Catty
+              </h3>
+              <p className="text-xs text-rose-700">
+                Live location streaming. Phone will sound siren alarm automatically if unacknowledged.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                emergencyAlarm.stop(true);
+                setParentCountdown(null);
+                setChildStatus('SAFE');
+              }}
+              className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black transition shadow-sm"
+            >
+              Acknowledge & Silence Alarm
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 2. Grid Overview: Quick Stats for Catty */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4">

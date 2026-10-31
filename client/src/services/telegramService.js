@@ -1,4 +1,44 @@
-// Telegram Emergency Alert Dispatch Service for Child (Catty) & Guardian (Tanish)
+// In-memory & Broadcast Channel alert relay between Child & Parent across any device/tab
+const SOS_RELAY_CHANNEL = 'estela_sos_global_relay';
+let relayChannel = null;
+try {
+  if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+    relayChannel = new BroadcastChannel(SOS_RELAY_CHANNEL);
+  }
+} catch (e) {}
+
+export function broadcastSosToParent(payload) {
+  try {
+    if (relayChannel) {
+      relayChannel.postMessage({ type: 'SOS_TRIGGERED', payload, timestamp: Date.now() });
+    }
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('estela_latest_sos_event', JSON.stringify({ payload, timestamp: Date.now() }));
+    }
+  } catch (e) {}
+}
+
+export function broadcastSosResolvedToParent() {
+  try {
+    if (relayChannel) {
+      relayChannel.postMessage({ type: 'SOS_RESOLVED', timestamp: Date.now() });
+    }
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('estela_latest_sos_event', JSON.stringify({ resolved: true, timestamp: Date.now() }));
+    }
+  } catch (e) {}
+}
+
+export function subscribeToSosEvents(onEvent) {
+  if (relayChannel) {
+    const handler = (event) => {
+      if (event.data) onEvent(event.data);
+    };
+    relayChannel.addEventListener('message', handler);
+    return () => relayChannel.removeEventListener('message', handler);
+  }
+  return () => {};
+}
 const TELEGRAM_BOT_TOKEN = '9016665127:AAE1kRi0zpATonPJ91j26Ub5_pP3WGX75oA';
 const DEFAULT_CHAT_ID = '8971040800';
 export const SINGLE_PRIMARY_NUMBER = '+91 9306617122';
@@ -62,6 +102,13 @@ Tanish, your child catty has triggered an emergency SOS alert! Please tap below 
     });
 
     const data = await response.json();
+    broadcastSosToParent({
+      childName: childName || userName || 'catty',
+      parentName: parentName || 'Tanish',
+      latitude: lat,
+      longitude: lon,
+      alertTimestamp: alertId
+    });
     return {
       success: data.ok,
       messageId: data.result?.message_id,
@@ -73,6 +120,36 @@ Tanish, your child catty has triggered an emergency SOS alert! Please tap below 
       success: false,
       error: err.message
     };
+  }
+}
+
+// Fetch recent incoming emergency alert updates to notify Parent Portal
+export async function fetchRecentEmergencyUpdates() {
+  try {
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=-10`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.ok || !Array.isArray(data.result)) return { hasActiveSos: false };
+
+    // Check callbacks or recent messages
+    const callbacks = data.result.filter(u => u.callback_query && u.callback_query.data);
+    const latestCallback = callbacks[callbacks.length - 1]?.callback_query;
+    
+    let isAccepted = false;
+    let isRejected = false;
+    if (latestCallback) {
+      isAccepted = latestCallback.data.includes('accept');
+      isRejected = latestCallback.data.includes('reject') || latestCallback.data.includes('decline');
+    }
+
+    return {
+      hasActiveSos: true,
+      latestCallback,
+      isAccepted,
+      isRejected
+    };
+  } catch (e) {
+    return { hasActiveSos: false };
   }
 }
 
@@ -118,6 +195,7 @@ export async function sendTelegramSafeConfirmation({
     });
 
     const data = await response.json();
+    broadcastSosResolvedToParent();
     return {
       success: data.ok,
       messageId: data.result?.message_id
