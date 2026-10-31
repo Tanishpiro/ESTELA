@@ -1,10 +1,10 @@
-// Telegram Emergency Alert Dispatch Service with Real-time Guardian Responsibility Handling
+// Telegram Emergency Alert Dispatch Service
 const TELEGRAM_BOT_TOKEN = '9016665127:AAE1kRi0zpATonPJ91j26Ub5_pP3WGX75oA';
 const DEFAULT_CHAT_ID = '8971040800';
-export const DEFAULT_EMERGENCY_MOBILE = '+91 8307543010';
+export const SINGLE_PRIMARY_NUMBER = '+91 9306617122';
 
 export async function sendTelegramEmergencyAlert({
-  userName = 'ESTELA User',
+  userName = 'Alex Chen',
   phone = '',
   latitude,
   longitude,
@@ -27,7 +27,7 @@ export async function sendTelegramEmergencyAlert({
 `🚨 *ESTELA EMERGENCY SOS ALERT!* 🚨
 ━━━━━━━━━━━━━━━━━━━━
 👤 *User:* ${userName}
-📱 *Target Phone:* ${DEFAULT_EMERGENCY_MOBILE}
+📱 *Emergency Contact:* ${SINGLE_PRIMARY_NUMBER}
 📍 *Live Location:* [View on Google Maps](${mapUrl})
 🌐 *Coordinates:* \`${lat.toFixed(5)}, ${lon.toFixed(5)}\`
 🎯 *GPS Accuracy:* ±${Math.round(accuracy || 10)}m
@@ -75,35 +75,36 @@ Please tap an option below to confirm whether you are taking immediate responsib
 
 // Check and process guardian acknowledgment updates from Telegram
 export async function processGuardianAcknowledgment(incidentTimestamp) {
-  if (!incidentTimestamp) return null;
-
   try {
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates`;
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=-10`;
     const res = await fetch(url);
     const data = await res.json();
     if (!data.ok || !Array.isArray(data.result) || data.result.length === 0) return null;
 
-    // Filter callback queries matching THIS SPECIFIC alert's timestamp
-    const matchingCallbacks = data.result
-      .filter(u => u.callback_query && u.callback_query.data)
-      .filter(u => u.callback_query.data.includes(String(incidentTimestamp)));
+    const callbacks = data.result.filter(u => u.callback_query && u.callback_query.data);
+    if (callbacks.length === 0) return null;
 
-    if (matchingCallbacks.length === 0) {
-      // No parent has clicked the button for THIS specific incident yet!
-      return null;
+    let matchedCallback = null;
+    if (incidentTimestamp) {
+      const filtered = callbacks.filter(u => u.callback_query.data.includes(String(incidentTimestamp)));
+      if (filtered.length > 0) {
+        matchedCallback = filtered[filtered.length - 1].callback_query;
+      }
+    } else {
+      matchedCallback = callbacks[callbacks.length - 1].callback_query;
     }
 
-    const latest = matchingCallbacks[matchingCallbacks.length - 1].callback_query;
-    const isAccepted = latest.data.includes('accept');
-    const isRejected = latest.data.includes('reject');
+    if (!matchedCallback) return null;
 
-    // Answer callback query
+    const isAccepted = matchedCallback.data.includes('accept');
+    const isRejected = matchedCallback.data.includes('reject') || matchedCallback.data.includes('decline');
+
     try {
       fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          callback_query_id: latest.id,
+          callback_query_id: matchedCallback.id,
           text: isAccepted 
             ? '✅ Responsibility accepted! ESTELA screen updated.' 
             : '⚠️ Marked unable/rejected. ESTELA screen updated.'
@@ -112,8 +113,8 @@ export async function processGuardianAcknowledgment(incidentTimestamp) {
     } catch (e) {}
 
     return {
-      id: latest.id,
-      from: latest.from,
+      id: matchedCallback.id,
+      from: matchedCallback.from,
       accepted: isAccepted,
       rejected: isRejected,
       timestamp: new Date().toISOString()

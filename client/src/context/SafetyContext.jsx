@@ -46,17 +46,15 @@ export function SafetyProvider({ children }) {
       const c = localStorage.getItem(STORAGE_CONTACTS);
       if (c) {
         const parsed = JSON.parse(c);
-        // Ensure 8307543010 is prioritized as primary contact
-        const hasMyNumber = parsed.some(item => item.phone && item.phone.includes('8307543010'));
-        if (hasMyNumber) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
       return [
         {
-          id: 'ctc_user_primary',
-          name: 'Primary Emergency Contact',
-          relationship: 'Family / Self',
-          phone: '+91 8307543010',
-          email: 'guardian@gmail.com',
+          id: 'ctc_user_dad',
+          name: 'DAD',
+          relationship: 'Family',
+          phone: '+91 9306617122',
+          email: 'tanishbhatia156@gmail.com',
           role: 'primary',
           notify_on_sos: 1,
           notify_on_missed_checkin: 1
@@ -65,11 +63,11 @@ export function SafetyProvider({ children }) {
     } catch {
       return [
         {
-          id: 'ctc_user_primary',
-          name: 'Primary Emergency Contact',
-          relationship: 'Family / Self',
-          phone: '+91 8307543010',
-          email: 'guardian@gmail.com',
+          id: 'ctc_user_dad',
+          name: 'DAD',
+          relationship: 'Family',
+          phone: '+91 9306617122',
+          email: 'tanishbhatia156@gmail.com',
           role: 'primary',
           notify_on_sos: 1,
           notify_on_missed_checkin: 1
