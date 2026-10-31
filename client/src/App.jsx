@@ -66,14 +66,6 @@ export default function App() {
                 }
               />
               <Route
-                path="/catty"
-                element={
-                  <ProtectedRoute>
-                    <ChildAppPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/ride"
                 element={
                   <ProtectedRoute>

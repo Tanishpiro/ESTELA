@@ -70,14 +70,6 @@ export default function Dashboard() {
                 <Baby className="w-4 h-4 text-purple-300" />
                 <span>Parent Portal (Tanish)</span>
               </Link>
-
-              <Link
-                to="/catty"
-                className="px-5 py-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs sm:text-sm flex items-center gap-2 transition"
-              >
-                <Siren className="w-4 h-4 text-rose-400" />
-                <span>Open Catty's App</span>
-              </Link>
             </div>
           </div>
 

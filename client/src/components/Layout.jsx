@@ -16,7 +16,6 @@ export default function Layout({ children }) {
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'Ride Safety (Rapido)', path: '/ride' },
     { label: 'Parent Portal (Tanish)', path: '/child' },
-    { label: "Catty's App", path: '/catty' },
     { label: 'Live Map', path: '/map' },
   ];
 
