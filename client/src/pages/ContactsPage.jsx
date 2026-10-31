@@ -72,7 +72,16 @@ export default function ContactsPage() {
         body: JSON.stringify(formData)
       });
 
-      const data = await res.json();
+      let data = {};
+      try {
+        const text = await res.text();
+        if (text && text.trim()) {
+          data = JSON.parse(text);
+        }
+      } catch (e) {
+        data = {};
+      }
+
       if (!res.ok) throw new Error(data.error || 'Failed to save contact');
 
       await refreshSafetyState();

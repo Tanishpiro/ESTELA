@@ -15,7 +15,13 @@ export default function SafetyHistoryPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
-        const data = await res.json();
+        let data = { sessions: [], incidents: [], checkins: [], notifications: [] };
+        try {
+          const text = await res.text();
+          if (text && text.trim()) {
+            data = JSON.parse(text);
+          }
+        } catch (e) {}
         setHistory(data);
       }
     } catch (e) {
