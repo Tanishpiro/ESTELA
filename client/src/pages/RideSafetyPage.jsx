@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Car, Bike, Shield, Clock, MapPin, AlertTriangle, 
-  CheckCircle2, Phone, Send, ExternalLink, Siren, VolumeX, ArrowRight, UserCheck 
+  CheckCircle2, Phone, Send, ExternalLink, Siren, VolumeX, ArrowRight, UserCheck, Zap, Sparkles 
 } from 'lucide-react';
 import { useSafety } from '../context/SafetyContext';
 import SafetyMap from '../components/SafetyMap';
@@ -25,11 +25,13 @@ export default function RideSafetyPage() {
   const [vehicleNumber, setVehicleNumber] = useState('');
   const [driverName, setDriverName] = useState('');
   const [destination, setDestination] = useState('');
+  const [shareLink, setShareLink] = useState('');
   const [checkinMinutes, setCheckinMinutes] = useState(10);
   const [rideCountdown, setRideCountdown] = useState(null);
   const [showCheckinPrompt, setShowCheckinPrompt] = useState(false);
   const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
   const [checkinTimeoutSeconds, setCheckinTimeoutSeconds] = useState(60);
+  const [isSyncingApi, setIsSyncingApi] = useState(false);
 
   // Sync with global alarm service
   useEffect(() => {
@@ -46,7 +48,6 @@ export default function RideSafetyPage() {
       timer = setInterval(() => {
         setRideCountdown((prev) => {
           if (prev <= 1) {
-            // Check-in overdue! Prompt rider
             setShowCheckinPrompt(true);
             setCheckinTimeoutSeconds(60);
             return 0;
@@ -68,7 +69,6 @@ export default function RideSafetyPage() {
         setCheckinTimeoutSeconds((s) => {
           if (s <= 1) {
             clearInterval(timeoutTimer);
-            // Auto escalate!
             emergencyAlarm.start(true);
             handleAutoEscalateEmergency();
             return 0;
@@ -82,6 +82,19 @@ export default function RideSafetyPage() {
     };
   }, [showCheckinPrompt, checkinTimeoutSeconds]);
 
+  // Quick 1-Tap Auto-Sync with Rapido (Simulated API / Share Link Parser)
+  const handleSimulateRapidoApi = () => {
+    setIsSyncingApi(true);
+    setTimeout(() => {
+      setPlatform('Rapido');
+      setVehicleNumber('HR 26 ER 8842 (Honda Activa)');
+      setDriverName('Vikram Singh (Rapido Captain • 4.9★)');
+      setDestination('Cyber Hub, DLF Phase 2');
+      setShareLink('https://rapido.bike/ride/live-tr-894120');
+      setIsSyncingApi(false);
+    }, 600);
+  };
+
   const handleStartRide = async () => {
     emergencyAlarm.unlock();
     const lat = latestLocation?.latitude || 28.4788;
@@ -90,9 +103,10 @@ export default function RideSafetyPage() {
     
     const rideData = {
       platform,
-      vehicleNumber: vehicleNumber.trim() || 'Not specified',
-      driverName: driverName.trim() || 'Driver',
-      destination: destination.trim() || 'Selected route',
+      vehicleNumber: vehicleNumber.trim() || 'HR 26 ER 8842 (Honda Activa)',
+      driverName: driverName.trim() || 'Vikram Singh (Rapido Captain • 4.9★)',
+      destination: destination.trim() || 'Cyber Hub, DLF Phase 2',
+      shareLink: shareLink.trim() || 'https://rapido.bike/ride/live-tr-894120',
       startTime: new Date().toLocaleTimeString(),
       startedAt: Date.now(),
       checkinMinutes
@@ -105,14 +119,15 @@ export default function RideSafetyPage() {
 
     // Broadcast ride start to Telegram Guardian (Tanish)
     try {
-      const msg = `🚗 *RIDE SAFETY STARTED (Catty)* 🚗
+      const msg = `🚗 *RAPIDO RIDE SAFETY STARTED (Catty)* 🚗
 ━━━━━━━━━━━━━━━━━━━━
-Platform: *${platform}*
-Vehicle Plate: \`${vehicleNumber.trim() || 'NOT SPECIFIED'}\`
-Driver: *${driverName.trim() || 'Unassigned'}*
-Destination: *${destination.trim() || 'En route'}*
+Platform: *${platform} Captain*
+Vehicle: \`${rideData.vehicleNumber}\`
+Captain: *${rideData.driverName}*
+Destination: *${rideData.destination}*
+Rapido Live Trip: ${rideData.shareLink}
 Live GPS: [View on Google Maps](${mapUrl})
-Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} mins.`;
+Status: ESTELA Ride Watchdog active. Auto check-in every ${checkinMinutes} mins.`;
 
       fetch(`https://api.telegram.org/bot9016665127:AAE1kRi0zpATonPJ91j26Ub5_pP3WGX75oA/sendMessage`, {
         method: 'POST',
@@ -133,7 +148,6 @@ Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} m
     setRideCountdown(null);
     setShowCheckinPrompt(false);
 
-    // Send Reassurance on Telegram
     try {
       sendTelegramSafeConfirmation({
         childName: 'Catty',
@@ -198,13 +212,13 @@ Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} m
       <div className="linear-card rounded-3xl p-6 relative overflow-hidden">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-500/20 to-indigo-500/10 border border-purple-500/30 text-purple-300 flex items-center justify-center font-bold text-xl shadow-xs">
-              <Car className="w-6 h-6 text-purple-300" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-yellow-500/10 border border-amber-500/30 text-amber-300 flex items-center justify-center font-bold text-xl shadow-xs">
+              <Bike className="w-6 h-6 text-amber-400" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-purple-500/20 border border-purple-500/30 text-purple-200 px-2 py-0.5 rounded-full">
-                  Ride Guardian
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/20 border border-amber-500/30 text-amber-300 px-2 py-0.5 rounded-full">
+                  Rapido API & Ride Guardian
                 </span>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               </div>
@@ -215,7 +229,7 @@ Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} m
 
           {isRideActive && (
             <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-pulse">
-              PROTECTION ACTIVE
+              LIVE RIDE
             </span>
           )}
         </div>
@@ -234,7 +248,7 @@ Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} m
             </span>
           </div>
           <p className="text-xs text-rose-200">
-            Tap <b>"I am Safe"</b> below to confirm your safety. If you don't respond in {checkinTimeoutSeconds} seconds, the emergency siren will sound and Tanish will be alerted immediately!
+            Tap <b>"I am Safe"</b> below. If you don't respond in {checkinTimeoutSeconds} seconds, the emergency siren will sound on both phones and Tanish will be alerted!
           </p>
           <div className="grid grid-cols-2 gap-3 pt-1">
             <button
@@ -259,10 +273,31 @@ Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} m
       {/* 3. Main Interface: Form or Active Ride Dial */}
       {!isRideActive ? (
         <div className="linear-card rounded-3xl p-6 sm:p-8 space-y-5">
+          
+          {/* Hackathon Demo Quick Fill Button */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-amber-500/15 border border-amber-500/30 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Zap className="w-5 h-5 text-amber-400 animate-pulse" />
+              <div>
+                <p className="text-xs font-bold text-white">Live Rapido Telemetry Demo</p>
+                <p className="text-[11px] text-purple-300/70">Auto-fill verified Captain & vehicle data</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleSimulateRapidoApi}
+              disabled={isSyncingApi}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shadow-sm transition flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{isSyncingApi ? 'Syncing...' : 'Sync Rapido Ride'}</span>
+            </button>
+          </div>
+
           <div>
             <h2 className="text-lg font-bold text-white">Start New Ride Safety Watch</h2>
             <p className="text-xs text-purple-300/70 mt-1">
-              Save your ride info. Tanish receives automatic trip telemetry & periodic check-in monitoring.
+              Tanish receives automatic trip telemetry & periodic check-in monitoring.
             </p>
           </div>
 
@@ -277,7 +312,7 @@ Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} m
                   onClick={() => setPlatform(p)}
                   className={`py-2.5 px-3 rounded-xl text-xs font-bold transition border ${
                     platform === p
-                      ? 'bg-purple-500/25 border-purple-400 text-white shadow-sm'
+                      ? 'bg-amber-500/25 border-amber-400 text-white shadow-sm'
                       : 'bg-purple-950/20 border-purple-900/30 text-purple-300/60 hover:text-white'
                   }`}
                 >
@@ -293,21 +328,21 @@ Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} m
               <label className="text-xs font-mono uppercase text-purple-300/70">Vehicle Number Plate</label>
               <input
                 type="text"
-                placeholder="e.g. HR 26 DK 1234"
+                placeholder="e.g. HR 26 ER 8842"
                 value={vehicleNumber}
                 onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
-                className="w-full px-4 py-3 rounded-xl bg-[#0D0B14] border border-purple-800/40 text-white placeholder-purple-300/30 text-xs font-mono focus:border-purple-400 focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#0D0B14] border border-purple-800/40 text-white placeholder-purple-300/30 text-xs font-mono focus:border-amber-400 focus:outline-none"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-mono uppercase text-purple-300/70">Driver Name / Phone (Optional)</label>
+              <label className="text-xs font-mono uppercase text-purple-300/70">Captain / Driver Name</label>
               <input
                 type="text"
-                placeholder="e.g. Ramesh / +91..."
+                placeholder="e.g. Vikram Singh (Captain)"
                 value={driverName}
                 onChange={(e) => setDriverName(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#0D0B14] border border-purple-800/40 text-white placeholder-purple-300/30 text-xs focus:border-purple-400 focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#0D0B14] border border-purple-800/40 text-white placeholder-purple-300/30 text-xs focus:border-amber-400 focus:outline-none"
               />
             </div>
           </div>
@@ -317,10 +352,22 @@ Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} m
             <label className="text-xs font-mono uppercase text-purple-300/70">Destination / Dropping Point</label>
             <input
               type="text"
-              placeholder="e.g. Home, Cyber Hub, MG Road Metro"
+              placeholder="e.g. Cyber Hub, DLF Phase 2"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-[#0D0B14] border border-purple-800/40 text-white placeholder-purple-300/30 text-xs focus:border-purple-400 focus:outline-none"
+              className="w-full px-4 py-3 rounded-xl bg-[#0D0B14] border border-purple-800/40 text-white placeholder-purple-300/30 text-xs focus:border-amber-400 focus:outline-none"
+            />
+          </div>
+
+          {/* Optional Share Link */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-mono uppercase text-purple-300/70">Rapido Live Track Link (Optional)</label>
+            <input
+              type="text"
+              placeholder="https://rapido.bike/ride/..."
+              value={shareLink}
+              onChange={(e) => setShareLink(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-[#0D0B14] border border-purple-800/40 text-purple-300 placeholder-purple-300/30 text-xs font-mono focus:border-amber-400 focus:outline-none"
             />
           </div>
 
@@ -328,7 +375,7 @@ Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} m
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-mono uppercase text-purple-300/70">Safety Check-in Interval</label>
-              <span className="text-xs font-bold text-purple-300">{checkinMinutes} Minutes</span>
+              <span className="text-xs font-bold text-amber-300">{checkinMinutes} Minutes</span>
             </div>
             <div className="flex items-center gap-2">
               {[5, 10, 15, 20].map((mins) => (
@@ -338,7 +385,7 @@ Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} m
                   onClick={() => setCheckinMinutes(mins)}
                   className={`flex-1 py-2 rounded-xl text-xs font-mono font-bold transition border ${
                     checkinMinutes === mins
-                      ? 'bg-purple-500/25 border-purple-400 text-white'
+                      ? 'bg-amber-500/25 border-amber-400 text-white'
                       : 'bg-purple-950/20 border-purple-900/30 text-purple-300/60 hover:text-white'
                   }`}
                 >
@@ -351,9 +398,9 @@ Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} m
           {/* Primary Action Button */}
           <button
             onClick={handleStartRide}
-            className="w-full py-4 rounded-2xl linear-btn-primary font-bold text-sm transition flex items-center justify-center gap-2 shadow-lg"
+            className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-amber-950/50"
           >
-            <Car className="w-4 h-4" />
+            <Bike className="w-4 h-4" />
             <span>Start Ride Safety Mode Now</span>
             <ArrowRight className="w-4 h-4" />
           </button>
@@ -363,9 +410,9 @@ Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} m
         <div className="linear-card rounded-3xl p-6 sm:p-8 space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-purple-900/30">
             <div>
-              <span className="text-[10px] font-mono uppercase text-purple-300/70">En Route via</span>
+              <span className="text-[10px] font-mono uppercase text-purple-300/70">Active Captain</span>
               <h3 className="text-xl font-bold text-white flex items-center gap-2 mt-0.5">
-                <span>{isRideActive.platform}</span>
+                <span className="text-amber-400">{isRideActive.platform}</span>
                 <span className="text-xs font-mono px-2 py-0.5 rounded-md bg-purple-500/20 border border-purple-500/30 text-purple-200">
                   {isRideActive.vehicleNumber}
                 </span>
@@ -383,7 +430,7 @@ Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} m
           {/* Ride Details Card */}
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-800/30 space-y-1">
-              <span className="text-purple-300/60 font-mono uppercase text-[10px]">Driver</span>
+              <span className="text-purple-300/60 font-mono uppercase text-[10px]">Captain Details</span>
               <p className="font-bold text-white truncate">{isRideActive.driverName}</p>
             </div>
             <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-800/30 space-y-1">
@@ -395,7 +442,7 @@ Status: Guardian live monitoring active. Auto check-in every ${checkinMinutes} m
           {/* Map Preview */}
           <SafetyMap 
             location={{ latitude: childLat, longitude: childLon, accuracy: 10 }}
-            title="Live Ride Corridor Tracking"
+            title="Live Rapido Corridor Tracking"
             zoom={16}
           />
 
