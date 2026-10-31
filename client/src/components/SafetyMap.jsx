@@ -63,6 +63,10 @@ export default function SafetyMap({
       map.invalidateSize();
       if (location && userMarkerRef.current) {
         userMarkerRef.current.setLatLng([lat, lon]);
+        userMarkerRef.current.setPopupContent(`<b>${title}</b><br/>Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}<br/><small style="color:#059669;">● Live GPS Streaming</small>`);
+        if (!destination && !activeRoute) {
+          map.panTo([lat, lon], { animate: true });
+        }
       }
     }
 

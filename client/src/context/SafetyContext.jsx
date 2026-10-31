@@ -134,6 +134,72 @@ export function SafetyProvider({ children }) {
     return () => clearInterval(interval);
   }, [refreshSafetyState]);
 
+  // Continuous High-Accuracy GPS Geolocation Watcher
+  useEffect(() => {
+    if (!('geolocation' in navigator)) return;
+
+    let watchId;
+    const updateLocation = (pos) => {
+      const loc = {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy: pos.coords.accuracy || 10,
+        speed: pos.coords.speed || 0,
+        heading: pos.coords.heading || 0,
+        updated_at: new Date().toISOString()
+      };
+      setLatestLocation(loc);
+      setLocationPermission('granted');
+
+      // Sync live location ping in background
+      if (token) {
+        fetch('/api/location/ping', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ ...loc, sessionId: activeSession ? activeSession.id : null })
+        }).catch(() => {});
+      }
+    };
+
+    const handleLocationError = (err) => {
+      console.warn('Geolocation update notice:', err.message);
+    };
+
+    // 1. Initial immediate location fetch
+    navigator.geolocation.getCurrentPosition(updateLocation, handleLocationError, {
+      enableHighAccuracy: true,
+      maximumAge: 2000,
+      timeout: 10000
+    });
+
+    // 2. Continuous real-time GPS stream
+    try {
+      watchId = navigator.geolocation.watchPosition(updateLocation, handleLocationError, {
+        enableHighAccuracy: true,
+        maximumAge: 2000,
+        timeout: 15000
+      });
+    } catch (e) {
+      console.warn('watchPosition unavailable');
+    }
+
+    // 3. Backup interval poll every 4 seconds to guarantee updates even if browser idles
+    const pollInterval = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(updateLocation, () => {}, {
+        enableHighAccuracy: true,
+        maximumAge: 2000,
+        timeout: 8000
+      });
+    }, 4000);
+
+    return () => {
+      if (watchId !== undefined) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      clearInterval(pollInterval);
+    };
+  }, [token, activeSession]);
+
   // Request browser location with fallback
   const getCurrentLocation = useCallback(() => {
     return new Promise((resolve) => {
@@ -148,27 +214,20 @@ export function SafetyProvider({ children }) {
             longitude: pos.coords.longitude,
             accuracy: pos.coords.accuracy || 12,
             speed: pos.coords.speed || 0,
-            heading: pos.coords.heading || 0
+            heading: pos.coords.heading || 0,
+            updated_at: new Date().toISOString()
           };
           setLatestLocation(loc);
           setLocationPermission('granted');
-
-          if (token) {
-            fetch('/api/location/ping', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ ...loc, sessionId: activeSession ? activeSession.id : null })
-            }).catch(() => {});
-          }
           resolve(loc);
         },
         () => {
           resolve(latestLocation);
         },
-        { enableHighAccuracy: true, timeout: 6000 }
+        { enableHighAccuracy: true, timeout: 5000 }
       );
     });
-  }, [token, activeSession, latestLocation]);
+  }, [latestLocation]);
 
   // Speech Recognition Setup
   useEffect(() => {
